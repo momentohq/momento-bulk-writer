@@ -1,0 +1,32 @@
+name: On push Main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build_csharp:
+    runs-on: ubuntu-latest
+    env:
+      TEST_AUTH_TOKEN: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
+      TEST_CACHE_NAME: client-sdk-dotnet
+
+    steps:
+      - name: Get current time
+        uses: gerred/actions/current-time@master
+        id: current-time
+
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0.x"
+
+      - name: Build
+        run: dotnet build
+        shell: bash
+
+      - name: Test
+        run: dotnet test
+        shell: bash
