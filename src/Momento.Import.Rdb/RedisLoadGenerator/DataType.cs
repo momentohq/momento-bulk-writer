@@ -1,6 +1,6 @@
 namespace Momento.Import.Rdb.RedisLoadGenerator;
 
-enum DataType
+public enum DataType
 {
     STRING,
     SET,

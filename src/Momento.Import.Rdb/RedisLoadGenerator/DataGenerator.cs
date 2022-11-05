@@ -2,7 +2,15 @@ using System.Text;
 
 namespace Momento.Import.Rdb.RedisLoadGenerator;
 
-internal class DataGenerator
+/// <summary>
+/// Generates somewhat-random data to store in Redis.
+///
+/// For convenience we generate Guids and concatenate them together.
+/// Because of this, the data is not completely random.
+/// That is OK though: only the keys need not collide.
+/// Other randomly generated data to store as values in Redis are just to fill up space.
+/// </summary>
+public class DataGenerator
 {
     private Random rnd;
     private int maxItemsPerDataStructure;
@@ -25,7 +33,7 @@ internal class DataGenerator
     /// <summary>
     /// Generates a random TimeSpan between 1 second and <paramref name="maxHours" /> seconds.
     /// </summary>
-    /// <param name="maxHours"></param>
+    /// <param name="maxHours">Max time in hours for the TimeSpan to generate. Defaults to value in constructor.</param>
     /// <returns></returns>
     public TimeSpan RandomTimeSpan(int? maxHours = null)
     {
@@ -34,19 +42,34 @@ internal class DataGenerator
         return TimeSpan.FromSeconds(randomSeconds);
     }
 
-    public string RandomishString(int num16ByteBlocks = 1)
+    /// <summary>
+    /// Generate a random-enough string concatenating Guids together.
+    /// </summary>
+    /// <param name="numBytes"></param>
+    /// <returns></returns>
+    public string RandomishString(int numBytes = 16)
     {
+        int num16ByteBlocks = numBytes / 16;
+        if (numBytes % 16 > 0)
+        {
+            num16ByteBlocks++;
+        }
         StringBuilder sb = new();
-        for (var i = 0; i <= num16ByteBlocks; i++)
+        for (var i = 0; i < num16ByteBlocks; i++)
         {
             sb.Append(Guid.NewGuid().ToString());
         }
-        return sb.ToString();
+        var result = sb.ToString();
+        if (result.Length > numBytes)
+        {
+            result = result.Substring(0, numBytes);
+        }
+        return result;
     }
 
     public string Randomish1KBString()
     {
-        return RandomishString(32);
+        return RandomishString(1024);
     }
 
     public int NumItemsPerDataStructure(int? maxItemsPerDataStructure = null)
