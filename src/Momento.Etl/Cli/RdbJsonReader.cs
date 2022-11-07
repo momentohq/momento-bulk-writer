@@ -25,10 +25,6 @@ public abstract record JsonParseResult
         private static Error _dataTypeNotSupported = new Error(ErrorMessage.DATA_TYPE_NOT_SUPPORTED);
         public static Error DataTypeNotSupported { get => _dataTypeNotSupported; }
     }
-
-
-    //private static Error _invalidJson = new Error(ErrorMessage.INVALID_JSON);
-    //public Error InvalidJson { get => _invalidJson }
 }
 
 public static class RdbJsonReader
