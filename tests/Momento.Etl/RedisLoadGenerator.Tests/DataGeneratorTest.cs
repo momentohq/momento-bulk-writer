@@ -1,7 +1,7 @@
-using Momento.Import.Rdb.RedisLoadGenerator;
+using Momento.Etl.RedisLoadGenerator;
 using Xunit;
 
-namespace Momento.Import.Rdb.RedisLoadGenerator.Tests;
+namespace Momento.Etl.RedisLoadGenerator.Tests;
 
 public class DataGeneratorTest
 {

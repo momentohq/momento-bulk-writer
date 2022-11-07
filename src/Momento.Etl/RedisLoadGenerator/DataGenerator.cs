@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Momento.Import.Rdb.RedisLoadGenerator;
+namespace Momento.Etl.RedisLoadGenerator;
 
 /// <summary>
 /// Generates somewhat-random data to store in Redis.

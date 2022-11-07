@@ -1,5 +1,7 @@
 using CommandLine;
 
+namespace Momento.Etl.RedisLoadGenerator;
+
 public class Options
 {
     [Option("redisHost", Required = false, HelpText = "Redis host to connect to")]

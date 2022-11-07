@@ -1,4 +1,4 @@
-namespace Momento.Import.Rdb.RedisLoadGenerator;
+namespace Momento.Etl.RedisLoadGenerator;
 
 public enum DataType
 {
