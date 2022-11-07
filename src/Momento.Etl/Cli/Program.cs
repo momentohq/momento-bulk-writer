@@ -11,6 +11,7 @@ namespace Momento.Etl.Cli;
 public class Program
 {
     private static ILogger logger;
+    private static Stats stats;
 
     static Program()
     {
@@ -25,6 +26,7 @@ public class Program
             builder.SetMinimumLevel(LogLevel.Information);
         });
         logger = loggerFactory.CreateLogger<Program>();
+        stats = new Stats(logger);
     }
 
     public static void DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errors)
@@ -96,6 +98,9 @@ public class Program
         {
             await ProcessLine(line, dataValidators, validStream, errorStream);
         }
+
+        logger.LogInformation("Finished");
+        stats.LogStats();
     }
 
     private static async Task ProcessLine(string line, IDataValidator dataValidator, StreamWriter validStream, StreamWriter errorStream)
@@ -113,10 +118,13 @@ public class Program
             if (validationResult is ValidationResult.OK)
             {
                 await validStream.WriteLineAsync(line);
+                stats.OK++;
             }
             else if (validationResult is ValidationResult.Error error)
             {
                 await errorStream.WriteLineAsync($"{error.Message}\t{line}");
+                stats.Error++;
+                stats.IncrementSpecificErrorCount(error.Message);
             }
             else
             {
@@ -126,10 +134,52 @@ public class Program
         else if (jsonParseResult is JsonParseResult.Error error)
         {
             await errorStream.WriteLineAsync($"{error.Message}\t{line}");
+            stats.Error++;
+            stats.IncrementSpecificErrorCount(error.Message);
         }
         else
         {
             logger.LogError($"Error parsing line, got unknown result {jsonParseResult} ; line={line}");
+        }
+        stats.Total++;
+    }
+
+    private record Stats
+    {
+        public int Total { get; set; }
+        public int OK { get; set; }
+        public int Error { get; set; }
+        public Dictionary<string, int> SpecificErrorCounts { get; set; } = new();
+
+        private ILogger logger;
+        public Stats(ILogger logger)
+        {
+            this.logger = logger;
+        }
+        public void LogStats(LogLevel level = LogLevel.Information)
+        {
+            logger.Log(level, "");
+            logger.Log(level, "==== STATS ====");
+            logger.Log(level, $"Total: {Total}");
+            logger.Log(level, $"OK: {OK}");
+            logger.Log(level, $"Error: {Error}");
+            logger.Log(level, "----");
+            foreach (var item in SpecificErrorCounts)
+            {
+                logger.Log(level, $"{item.Key}: {item.Value}");
+            }
+        }
+
+        public void IncrementSpecificErrorCount(string name)
+        {
+            if (SpecificErrorCounts.ContainsKey(name))
+            {
+                SpecificErrorCounts[name]++;
+            }
+            else
+            {
+                SpecificErrorCounts[name] = 1;
+            }
         }
     }
 }
