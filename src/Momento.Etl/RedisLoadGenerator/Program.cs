@@ -5,7 +5,7 @@ using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
-namespace Momento.Import.Rdb.RedisLoadGenerator;
+namespace Momento.Etl.RedisLoadGenerator;
 
 public class Program
 {
