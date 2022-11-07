@@ -3,9 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AAB86732-4BCA-4724-B929-1319A2BC7640}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{39F9F9BA-9DAA-4F4D-BC49-0FCFF135B1CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StubTests", "tests\StubTests\StubTests.csproj", "{D1F4A066-E689-4231-A580-EDC544C6E34A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Momento.Import.Rdb", "Momento.Import.Rdb", "{16B342C8-475B-45EA-8FA6-F549C4EFDC14}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisLoadGenerator", "src\Momento.Import.Rdb\RedisLoadGenerator\RedisLoadGenerator.csproj", "{512307B9-6BA5-4416-9092-6B964D5F217A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{61C1B011-B5C8-41B9-B122-147BE6C13B00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Momento.Import.Rdb", "Momento.Import.Rdb", "{79D4E9FA-2BE3-4379-962E-F9B282CE3072}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisLoadGenerator.Tests", "tests\Momento.Import.Rdb\RedisLoadGenerator.Tests\RedisLoadGenerator.Tests.csproj", "{92238852-D07B-4CE1-B1BF-64FE7EF34257}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,12 +24,19 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D1F4A066-E689-4231-A580-EDC544C6E34A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D1F4A066-E689-4231-A580-EDC544C6E34A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D1F4A066-E689-4231-A580-EDC544C6E34A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D1F4A066-E689-4231-A580-EDC544C6E34A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{512307B9-6BA5-4416-9092-6B964D5F217A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{512307B9-6BA5-4416-9092-6B964D5F217A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{512307B9-6BA5-4416-9092-6B964D5F217A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{512307B9-6BA5-4416-9092-6B964D5F217A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92238852-D07B-4CE1-B1BF-64FE7EF34257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92238852-D07B-4CE1-B1BF-64FE7EF34257}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92238852-D07B-4CE1-B1BF-64FE7EF34257}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92238852-D07B-4CE1-B1BF-64FE7EF34257}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{D1F4A066-E689-4231-A580-EDC544C6E34A} = {AAB86732-4BCA-4724-B929-1319A2BC7640}
+		{16B342C8-475B-45EA-8FA6-F549C4EFDC14} = {39F9F9BA-9DAA-4F4D-BC49-0FCFF135B1CD}
+		{512307B9-6BA5-4416-9092-6B964D5F217A} = {16B342C8-475B-45EA-8FA6-F549C4EFDC14}
+		{79D4E9FA-2BE3-4379-962E-F9B282CE3072} = {61C1B011-B5C8-41B9-B122-147BE6C13B00}
+		{92238852-D07B-4CE1-B1BF-64FE7EF34257} = {79D4E9FA-2BE3-4379-962E-F9B282CE3072}
 	EndGlobalSection
 EndGlobal
