@@ -2,7 +2,7 @@ using CommandLine;
 
 namespace Momento.Etl.Cli;
 
-public class Options
+public class ValidateOptions
 {
     [Option("maxPayloadSize", Required = false, HelpText = "Max payload size in MiB, inclusive. Defaults to 1.")]
     public int MaxPayloadSize { get; set; } = 1;
