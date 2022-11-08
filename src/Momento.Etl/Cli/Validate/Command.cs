@@ -1,19 +1,20 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommandLine;
+using Microsoft.Extensions.Logging;
 using Momento.Etl.Validation;
 
-namespace Momento.Etl.Cli;
+namespace Momento.Etl.Cli.Validate;
 
-public class ValidateCommand
+public class Command
 {
     private ILogger logger;
     private Stats stats = null!;
 
-    public ValidateCommand(ILoggerFactory loggerFactory)
+    public Command(ILoggerFactory loggerFactory)
     {
-        this.logger = loggerFactory.CreateLogger<ValidateCommand>();
+        this.logger = loggerFactory.CreateLogger<Command>();
     }
 
-    public async Task ValidateAsync(ValidateOptions options)
+    public async Task RunAsync(Options options)
     {
         stats = new Stats(logger);
         try

@@ -1,4 +1,5 @@
 using CommandLine;
+using Momento.Etl.Utils;
 
 namespace Momento.Etl.RedisLoadGenerator;
 
@@ -28,37 +29,13 @@ public class Options
     [Value(0, Required = true, HelpText = "Number of items to generate.")]
     public int NumItems { get; set; }
 
-    private static void AssertNonnegative(int value, string name)
-    {
-        if (value < 0)
-        {
-            throw new ArgumentException("Number was negative but must be non-negative", name);
-        }
-    }
-
-    private static void AssertStrictlyPositive(int value, string name)
-    {
-        if (value <= 0)
-        {
-            throw new ArgumentException("Number was 0 or negative and must be strictly positive", name);
-        }
-    }
-
-    private static void AssertInUnitInterval(double value, string name)
-    {
-        if (value < 0 || value > 1)
-        {
-            throw new ArgumentException("Number was negative or great than 1 and must be in the unit interval", name);
-        }
-    }
-
     public void Validate()
     {
-        AssertNonnegative(StartupDelay, "StartupDelay");
-        AssertStrictlyPositive(MaxItemsPerDataStructure, "MaxItemsPerDataStructure");
-        AssertStrictlyPositive(MaxTtlHours, "MaxTtlHours");
-        AssertInUnitInterval(ExpireProb, "ExpireProb");
-        AssertNonnegative(RandomSeed, "RandomSeed");
-        AssertStrictlyPositive(NumItems, "NumItems");
+        OptionUtils.AssertNonnegative(StartupDelay, "StartupDelay");
+        OptionUtils.AssertStrictlyPositive(MaxItemsPerDataStructure, "MaxItemsPerDataStructure");
+        OptionUtils.AssertStrictlyPositive(MaxTtlHours, "MaxTtlHours");
+        OptionUtils.AssertInUnitInterval(ExpireProb, "ExpireProb");
+        OptionUtils.AssertNonnegative(RandomSeed, "RandomSeed");
+        OptionUtils.AssertStrictlyPositive(NumItems, "NumItems");
     }
 }

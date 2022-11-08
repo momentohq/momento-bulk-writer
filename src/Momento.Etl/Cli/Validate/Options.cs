@@ -1,8 +1,10 @@
 using CommandLine;
+using Momento.Etl.Utils;
 
-namespace Momento.Etl.Cli;
+namespace Momento.Etl.Cli.Validate;
 
-public class ValidateOptions
+[Verb("validate", HelpText = "validate redis data for momento")]
+public class Options
 {
     [Option("maxPayloadSize", Required = false, HelpText = "Max payload size in MiB, inclusive. Defaults to 1.")]
     public int MaxPayloadSize { get; set; } = 1;
@@ -31,24 +33,10 @@ public class ValidateOptions
     [Value(2, MetaName = "ERROR_PATH", Required = true, HelpText = "Path to write invalid data to.")]
     public string ErrorFilePath { get; set; } = default!;
 
-    private static void TryOpenFile(string filePath)
-    {
-        var stream = File.OpenRead(filePath);
-        stream.Dispose();
-    }
-
-    private static void AssertStrictlyPositive(int value, string name)
-    {
-        if (value <= 0)
-        {
-            throw new ArgumentException("Number was 0 or negative and must be strictly positive", name);
-        }
-    }
-
     public void Validate()
     {
-        TryOpenFile(DataFilePath);
-        AssertStrictlyPositive(MaxPayloadSize, "maxPayloadSize");
-        AssertStrictlyPositive(MaxTtl, "maxTtl");
+        OptionUtils.TryOpenFile(DataFilePath);
+        OptionUtils.AssertStrictlyPositive(MaxPayloadSize, "maxPayloadSize");
+        OptionUtils.AssertStrictlyPositive(MaxTtl, "maxTtl");
     }
 }

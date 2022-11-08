@@ -3,7 +3,6 @@ using System;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
-using Momento.Etl.Cli;
 
 namespace Momento.Etl.Cli;
 
@@ -42,9 +41,14 @@ public class Program
     public static async Task Main(string[] args)
     {
         var parser = new CommandLine.Parser(with => with.HelpWriter = null);
-        var parserResult = parser.ParseArguments<ValidateOptions>(args);
-        parserResult.WithNotParsed<ValidateOptions>(errors => DisplayHelp(parserResult, errors));
-        await parserResult.WithParsedAsync<ValidateOptions>(async options => await new ValidateCommand(loggerFactory).ValidateAsync(options));
+        var result = parser.ParseArguments<Validate.Options, Load.Options>(args);
+        result = await result.WithParsedAsync<Validate.Options>(async options =>
+        {
+            var command = new Validate.Command(loggerFactory);
+            await command.RunAsync(options);
+        });
+        result = await result.WithParsedAsync<Load.Options>(async options => await Task.Delay(1));
+        result.WithNotParsed(errors => DisplayHelp(result, errors));
     }
 }
 
