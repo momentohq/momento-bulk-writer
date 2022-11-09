@@ -153,7 +153,7 @@ public class Command : IDisposable
             }
             else if (pushResponse is CacheListPushBackResponse.Error pushError)
             {
-                logger.LogError($"error_pushing: {pushError.Message}; {line}");
+                logger.LogError($"error_storing: {pushError.Message}; {line}");
             }
             else
             {
