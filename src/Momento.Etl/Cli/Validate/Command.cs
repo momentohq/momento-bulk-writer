@@ -18,15 +18,6 @@ public class Command
     public async Task RunAsync(Options options)
     {
         stats = new Stats(logger);
-        try
-        {
-            options.Validate();
-        }
-        catch (Exception e)
-        {
-            logger.LogError($"Error validating CLI options: {e.Message}");
-            await ExitUtils.DelayedExit(1);
-        }
 
         var dataValidators = new DataValidatorChain();
         if (options.FilterLargeData)

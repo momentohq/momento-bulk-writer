@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Momento.Etl.Model;
 using Momento.Etl.Utils;
-using Momento.Sdk.Auth;
-using Momento.Sdk.Config;
 using Momento.Sdk.Incubating;
 using Momento.Sdk.Incubating.Responses;
 using Momento.Sdk.Responses;
@@ -12,18 +10,13 @@ namespace Momento.Etl.Cli.Load;
 
 public class Command : IDisposable
 {
-    private ILoggerFactory loggerFactory;
     private ILogger logger;
     private SimpleCacheClient client;
 
-    public Command(ILoggerFactory loggerFactory, string authToken)
+    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client)
     {
-        this.loggerFactory = loggerFactory;
         logger = loggerFactory.CreateLogger<Command>();
-
-        var config = Configurations.Laptop.Latest(loggerFactory);
-        var authProvider = new StringMomentoTokenProvider(authToken);
-        client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromMinutes(1));
+        this.client = client;
     }
 
     public async Task RunAsync(Options options)

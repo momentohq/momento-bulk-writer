@@ -3,6 +3,10 @@ using System;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
+using Momento.Sdk.Auth;
+using Momento.Sdk.Config;
+using Momento.Sdk.Incubating;
+
 
 namespace Momento.Etl.Cli;
 
@@ -44,12 +48,36 @@ public class Program
         var result = parser.ParseArguments<Validate.Options, Load.Options>(args);
         result = await result.WithParsedAsync<Validate.Options>(async options =>
             {
+                try
+                {
+                    options.Validate();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError($"Error validating CLI options: {e.Message}");
+                    await ExitUtils.DelayedExit(1);
+                }
+
                 var command = new Validate.Command(loggerFactory);
                 await command.RunAsync(options);
             });
         result = await result.WithParsedAsync<Load.Options>(async options =>
             {
-                var command = new Load.Command(loggerFactory, options.AuthToken);
+                try
+                {
+                    options.Validate();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError($"Error validating CLI options: {e.Message}");
+                    await ExitUtils.DelayedExit(1);
+                }
+
+                var config = Configurations.InRegion.Default.Latest(loggerFactory);
+                var authProvider = new StringMomentoTokenProvider(options.AuthToken);
+                var client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromMinutes(1));
+
+                var command = new Load.Command(loggerFactory, client);
                 await command.RunAsync(options);
             });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
