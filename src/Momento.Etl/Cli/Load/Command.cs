@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Momento.Etl.Model;
-using Momento.Etl.Utils;
 using Momento.Sdk.Incubating;
 using Momento.Sdk.Incubating.Responses;
 using Momento.Sdk.Responses;
@@ -78,18 +77,34 @@ public class Command : IDisposable
     private async Task Load(string cacheName, RedisString item, TimeSpan? ttl, string line)
     {
         var response = await client.SetAsync(cacheName, item.Key, item.Value, ttl);
-        if (response is CacheSetResponse.Error error)
+        if (response is CacheSetResponse.Success)
+        {
+
+        }
+        else if (response is CacheSetResponse.Error error)
         {
             logger.LogError($"error_storing: {error.InnerException.Message}; {line}");
+        }
+        else
+        {
+            logger.LogError($"unknown_response: {line}");
         }
     }
 
     private async Task Load(string cacheName, RedisHash item, TimeSpan? ttl, string line)
     {
         var response = await client.DictionarySetBatchAsync(cacheName, item.Key, item.Value, true, ttl);
-        if (response is CacheDictionarySetBatchResponse.Error error)
+        if (response is CacheDictionarySetBatchResponse.Success)
+        {
+
+        }
+        else if (response is CacheDictionarySetBatchResponse.Error error)
         {
             logger.LogError($"error_storing: {error.Message}; {line}");
+        }
+        else
+        {
+            logger.LogError($"unknown_response: {line}");
         }
     }
 
@@ -97,17 +112,33 @@ public class Command : IDisposable
     {
         // List operations are not idempotent. Ensure the list is not there.
         var deleteResponse = await client.ListDeleteAsync(cacheName, item.Key);
-        if (deleteResponse is CacheListDeleteResponse.Error error)
+        if (deleteResponse is CacheListDeleteResponse.Success)
+        {
+
+        }
+        else if (deleteResponse is CacheListDeleteResponse.Error error)
         {
             logger.LogError($"error_deleting: {error.Message}; {line}");
+        }
+        else
+        {
+            logger.LogError($"unknown_response: {line}");
         }
 
         foreach (var listItem in item.Value)
         {
             var pushResponse = await client.ListPushBackAsync(cacheName, item.Key, listItem, true, ttl);
-            if (pushResponse is CacheListPushBackResponse.Error pushError)
+            if (pushResponse is CacheListPushBackResponse.Success)
+            {
+
+            }
+            else if (pushResponse is CacheListPushBackResponse.Error pushError)
             {
                 logger.LogError($"error_pushing: {pushError.Message}; {line}");
+            }
+            else
+            {
+                logger.LogError($"unknown_response: {line}");
             }
         }
     }
@@ -119,13 +150,19 @@ public class Command : IDisposable
         {
             logger.LogError($"error_storing: {error.Message}; {line}");
         }
+        else
+        {
+            logger.LogError($"unknown_response: {line}");
+        }
     }
 
+#pragma warning disable CS1998
+    // cs1998
     private async Task Load(string cacheName, object item, TimeSpan? ttl, string line)
     {
         logger.LogError($"unsupported_data_type: {line}");
-        await Task.Delay(0);
     }
+#pragma warning restore CS1998
 
     private async Task CreateCacheAsync(string cacheName)
     {
