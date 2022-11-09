@@ -15,11 +15,19 @@ public class Options
     [Option('x', "createCache", Required = false, HelpText = "Create cache if not present.")]
     public bool CreateCache { get; set; }
 
+    [Option("defaultTtl", Required = true, HelpText = "Default TTL in days, inclusive. Items missing a TTL receive this value.")]
+    public int DefaultTtl { get; set; }
+
+    [Option("maxTtl", Required = true, HelpText = "Max TTL in days, inclusive. Clips longer TTLs to this.")]
+    public int MaxTtl { get; set; }
+
     [Value(0, Required = false, HelpText = "File to load into Momento")]
     public string FilePath { get; set; } = default!;
 
     public void Validate()
     {
         OptionUtils.TryOpenFile(FilePath);
+        OptionUtils.AssertStrictlyPositive(DefaultTtl, "defaultTtl");
+        OptionUtils.AssertStrictlyPositive(MaxTtl, "maxTtl");
     }
 }

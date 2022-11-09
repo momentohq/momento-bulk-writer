@@ -11,11 +11,13 @@ public class Command : IDisposable
 {
     private ILogger logger;
     private SimpleCacheClient client;
+    private TimeSpan maxTtl;
 
-    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client)
+    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client, TimeSpan maxTtl)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
+        this.maxTtl = maxTtl;
     }
 
     public async Task RunAsync(Options options)
@@ -61,6 +63,11 @@ public class Command : IDisposable
             {
                 logger.LogInformation($"already_expired: {line}");
                 return;
+            }
+            else if (ttl > maxTtl)
+            {
+                logger.LogInformation($"clipping_ttl: {line}");
+                ttl = maxTtl;
             }
             await Load(cacheName, item as dynamic, ttl, line);
         }

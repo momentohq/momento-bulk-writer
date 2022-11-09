@@ -73,11 +73,12 @@ public class Program
                 await ExitUtils.DelayedExit(1);
             }
 
+            logger.LogInformation($"Loading to {options.CacheName} with a default TTL of {options.DefaultTtl}d and max TTL of {options.MaxTtl}d");
             var config = Configurations.InRegion.Default.Latest(loggerFactory);
             var authProvider = new StringMomentoTokenProvider(options.AuthToken);
-            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromMinutes(1));
+            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromDays(options.DefaultTtl));
 
-            var command = new Load.Command(loggerFactory, client);
+            var command = new Load.Command(loggerFactory, client, TimeSpan.FromDays(options.MaxTtl));
             await command.RunAsync(options);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
