@@ -11,30 +11,30 @@ public class Command : IDisposable
 {
     private ILogger logger;
     private SimpleCacheClient client;
-    private TimeSpan maxTtl;
+    private bool createCache;
 
-    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client, TimeSpan maxTtl)
+    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client, bool createCache)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
-        this.maxTtl = maxTtl;
+        this.createCache = createCache;
     }
 
-    public async Task RunAsync(Options options)
+    public async Task RunAsync(string cacheName, string filePath, TimeSpan maxTtl, bool resetAlreadyExpiredToMaxTtl = false)
     {
-        if (options.CreateCache)
+        if (createCache)
         {
-            await CreateCacheAsync(options.CacheName);
+            await CreateCacheAsync(cacheName);
         }
 
-        logger.LogInformation($"Extracting and loading {options.FilePath}");
-        using (var stream = File.OpenText(options.FilePath))
+        logger.LogInformation($"Extracting and loading {filePath}");
+        using (var stream = File.OpenText(filePath))
         {
             string? line;
             int linesProcessed = 0;
             while ((line = stream.ReadLine()) != null)
             {
-                await ProcessLine(options.CacheName, line);
+                await ProcessLine(cacheName, line, maxTtl, resetAlreadyExpiredToMaxTtl);
                 linesProcessed++;
                 if (linesProcessed % 10_000 == 0)
                 {
@@ -46,7 +46,7 @@ public class Command : IDisposable
     }
 
 
-    private async Task ProcessLine(string cacheName, string line)
+    private async Task ProcessLine(string cacheName, string line, TimeSpan maxTtl, bool resetAlreadyExpiredToMaxTtl = false)
     {
         line = line.Trim();
         if (line.Equals(""))
@@ -61,8 +61,16 @@ public class Command : IDisposable
             var ttl = item.TtlRelativeToNow();
             if (RedisItem.HasExpiredRelativeToNow(ttl))
             {
-                logger.LogInformation($"already_expired: {line}");
-                return;
+                if (resetAlreadyExpiredToMaxTtl)
+                {
+                    // The client will use the default TTL
+                    ttl = null;
+                }
+                else
+                {
+                    logger.LogInformation($"already_expired: {line}");
+                    return;
+                }
             }
             else if (ttl > maxTtl)
             {

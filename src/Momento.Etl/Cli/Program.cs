@@ -73,13 +73,13 @@ public class Program
                 await ExitUtils.DelayedExit(1);
             }
 
-            logger.LogInformation($"Loading to {options.CacheName} with a default TTL of {options.DefaultTtl}d and max TTL of {options.MaxTtl}d");
+            logger.LogInformation($"Loading to {options.CacheName} with a default TTL of {options.DefaultTtlTimeSpan} and max TTL of {options.MaxTtlTimeSpan}");
             var config = Configurations.InRegion.Default.Latest(loggerFactory);
             var authProvider = new StringMomentoTokenProvider(options.AuthToken);
-            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromDays(options.DefaultTtl));
+            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, options.DefaultTtlTimeSpan);
 
-            var command = new Load.Command(loggerFactory, client, TimeSpan.FromDays(options.MaxTtl));
-            await command.RunAsync(options);
+            var command = new Load.Command(loggerFactory, client, options.CreateCache);
+            await command.RunAsync(options.CacheName, options.FilePath, options.MaxTtlTimeSpan, options.ResetAlreadyExpiredToMaxTtl);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }
