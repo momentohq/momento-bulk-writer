@@ -43,11 +43,15 @@ public class Program
         var parser = new CommandLine.Parser(with => with.HelpWriter = null);
         var result = parser.ParseArguments<Validate.Options, Load.Options>(args);
         result = await result.WithParsedAsync<Validate.Options>(async options =>
-        {
-            var command = new Validate.Command(loggerFactory);
-            await command.RunAsync(options);
-        });
-        result = await result.WithParsedAsync<Load.Options>(async options => await Task.Delay(1));
+            {
+                var command = new Validate.Command(loggerFactory);
+                await command.RunAsync(options);
+            });
+        result = await result.WithParsedAsync<Load.Options>(async options =>
+            {
+                var command = new Load.Command(loggerFactory, options.AuthToken);
+                await command.RunAsync(options);
+            });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }
 }

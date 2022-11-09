@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using Microsoft.Extensions.Logging;
+using Momento.Etl.Utils;
 using Momento.Etl.Validation;
 
 namespace Momento.Etl.Cli.Validate;
@@ -24,8 +25,7 @@ public class Command
         catch (Exception e)
         {
             logger.LogError($"Error validating CLI options: {e.Message}");
-            await Task.Delay(1);
-            Environment.Exit(1);
+            await ExitUtils.DelayedExit(1);
         }
 
         var dataValidators = new DataValidatorChain();

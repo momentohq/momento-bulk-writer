@@ -1,32 +1,25 @@
 using CommandLine;
+using Momento.Etl.Utils;
 
 namespace Momento.Etl.Cli.Load;
 
 [Verb("load", HelpText = "load data into momento")]
 public class Options
 {
-    [Value(0, MetaName = "DATA_PATH", Required = true, HelpText = "Path to read redis-rdb-cli dump from.")]
-    public string DataFilePath { get; set; } = default!;
+    [Option('a', "authToken", Required = true, HelpText = "Momento auth token.")]
+    public string AuthToken { get; set; } = default!;
 
-    [Value(2, MetaName = "ERROR_PATH", Required = true, HelpText = "Path to write invalid data to.")]
-    public string ErrorFilePath { get; set; } = default!;
+    [Option('c', "cacheName", Required = true, HelpText = "Momento cache to store data in.")]
+    public string CacheName { get; set; } = default!;
 
-    private static void TryOpenFile(string filePath)
-    {
-        var stream = File.OpenRead(filePath);
-        stream.Dispose();
-    }
+    [Option('x', "createCache", Required = false, HelpText = "Create cache if not present.")]
+    public bool CreateCache { get; set; }
 
-    private static void AssertStrictlyPositive(int value, string name)
-    {
-        if (value <= 0)
-        {
-            throw new ArgumentException("Number was 0 or negative and must be strictly positive", name);
-        }
-    }
+    [Value(0, Required = false, HelpText = "File to load into Momento")]
+    public string FilePath { get; set; } = default!;
 
     public void Validate()
     {
-        TryOpenFile(DataFilePath);
+        OptionUtils.TryOpenFile(FilePath);
     }
 }
