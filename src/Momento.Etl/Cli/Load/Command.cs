@@ -20,13 +20,17 @@ public class Command : IDisposable
         this.createCache = createCache;
     }
 
-    public async Task RunAsync(string cacheName, string filePath, TimeSpan maxTtl, bool resetAlreadyExpiredToMaxTtl = false)
+    public async Task RunAsync(string cacheName, string filePath, TimeSpan maxTtl, bool resetAlreadyExpiredToDefaultTtl = false)
     {
         if (createCache)
         {
             await CreateCacheAsync(cacheName);
         }
 
+        if (resetAlreadyExpiredToDefaultTtl)
+        {
+            logger.LogInformation($"Resetting already expired items to use the default TTL");
+        }
         logger.LogInformation($"Extracting and loading {filePath}");
         using (var stream = File.OpenText(filePath))
         {
@@ -34,7 +38,7 @@ public class Command : IDisposable
             int linesProcessed = 0;
             while ((line = stream.ReadLine()) != null)
             {
-                await ProcessLine(cacheName, line, maxTtl, resetAlreadyExpiredToMaxTtl);
+                await ProcessLine(cacheName, line, maxTtl, resetAlreadyExpiredToDefaultTtl);
                 linesProcessed++;
                 if (linesProcessed % 10_000 == 0)
                 {
@@ -46,7 +50,7 @@ public class Command : IDisposable
     }
 
 
-    private async Task ProcessLine(string cacheName, string line, TimeSpan maxTtl, bool resetAlreadyExpiredToMaxTtl = false)
+    private async Task ProcessLine(string cacheName, string line, TimeSpan maxTtl, bool resetAlreadyExpiredToDefaultTtl = false)
     {
         line = line.Trim();
         if (line.Equals(""))
@@ -61,7 +65,7 @@ public class Command : IDisposable
             var ttl = item.TtlRelativeToNow();
             if (RedisItem.HasExpiredRelativeToNow(ttl))
             {
-                if (resetAlreadyExpiredToMaxTtl)
+                if (resetAlreadyExpiredToDefaultTtl)
                 {
                     // The client will use the default TTL
                     ttl = null;

@@ -79,7 +79,7 @@ public class Program
             var client = SimpleCacheClientFactory.CreateClient(config, authProvider, options.DefaultTtlTimeSpan);
 
             var command = new Load.Command(loggerFactory, client, options.CreateCache);
-            await command.RunAsync(options.CacheName, options.FilePath, options.MaxTtlTimeSpan, options.ResetAlreadyExpiredToMaxTtl);
+            await command.RunAsync(options.CacheName, options.FilePath, options.MaxTtlTimeSpan, options.ResetAlreadyExpiredToDefaultTtl);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }

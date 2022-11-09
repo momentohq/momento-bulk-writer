@@ -21,8 +21,8 @@ public class Options
     [Option("maxTtl", Required = true, HelpText = "Max TTL in days, inclusive. Clips longer TTLs to this.")]
     public int MaxTtl { get; set; }
 
-    [Option('r', "resetAlreadyExpiredToMaxTtl", Required = false, HelpText = "(For testing) Reset an already expired item to default TTL. Defaults to false.")]
-    public bool ResetAlreadyExpiredToMaxTtl { get; set; } = false;
+    [Option('r', "resetAlreadyExpiredToDefaultTtl", Required = false, HelpText = "(For testing) Reset an already expired item to default TTL. Defaults to false.")]
+    public bool ResetAlreadyExpiredToDefaultTtl { get; set; } = false;
 
     [Value(0, Required = false, HelpText = "File to load into Momento")]
     public string FilePath { get; set; } = default!;
