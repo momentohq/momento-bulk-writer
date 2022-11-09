@@ -15,7 +15,7 @@ public class Options
     [Option('x', "createCache", Required = false, HelpText = "Create cache if not present.")]
     public bool CreateCache { get; set; }
 
-    [Option("defaultTtl", Required = true, HelpText = "Default TTL in days, inclusive. Items missing a TTL receive this value.")]
+    [Option("defaultTtl", Required = true, HelpText = "Default TTL in days, inclusive. Items missing a TTL receive this value. Should be less than or equal to max TTL.")]
     public int DefaultTtl { get; set; }
 
     [Option("maxTtl", Required = true, HelpText = "Max TTL in days, inclusive. Clips longer TTLs to this.")]
@@ -29,5 +29,9 @@ public class Options
         OptionUtils.TryOpenFile(FilePath);
         OptionUtils.AssertStrictlyPositive(DefaultTtl, "defaultTtl");
         OptionUtils.AssertStrictlyPositive(MaxTtl, "maxTtl");
+        if (DefaultTtl > MaxTtl)
+        {
+            throw new ArgumentException($"Default TTL cannot be greater than Max TTL. Default was: {DefaultTtl}; Max was: {MaxTtl}");
+        }
     }
 }
