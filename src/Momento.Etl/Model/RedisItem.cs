@@ -18,9 +18,14 @@ public abstract record RedisItem
         return DateTimeOffset.FromUnixTimeMilliseconds(Expiry.GetValueOrDefault()) - DateTime.Now;
     }
 
-    public bool HasExpiredRelativeToNow(TimeSpan? ttl = null)
+    public bool HasExpiredRelativeToNow()
     {
-        ttl ??= TtlRelativeToNow();
+        var ttl = TtlRelativeToNow();
+        return HasExpiredRelativeToNow(ttl);
+    }
+
+    public static bool HasExpiredRelativeToNow(TimeSpan? ttl)
+    {
         if (ttl is null)
         {
             return false;

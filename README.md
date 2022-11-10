@@ -14,7 +14,7 @@ ETL for users with a Redis database in hand
 │       ├── RedisLoadGenerator ...... redis load gen to create rdb files
 |       ├── Model ................... redis data model basd on redis-rdb-cli jsonl
 |       ├── Validation .............. momento-redis data validation
-|       └── Cli ..................... cli to run validator
+|       └── Cli ..................... cli to run validator and loader
 ├── RdbToMomento.sln ................ repo solution file
 ├── LICENSE ......................... apache 2.0 license
 └── README.md ....................... hey that's me

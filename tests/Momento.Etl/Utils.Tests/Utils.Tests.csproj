@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Momento.Import.Rdb\RedisLoadGenerator\RedisLoadGenerator.csproj" />
+    <ProjectReference Include="..\..\..\src\Momento.Etl\Utils\Utils.csproj" />
   </ItemGroup>
 
 </Project>
