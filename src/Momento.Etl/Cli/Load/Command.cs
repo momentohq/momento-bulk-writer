@@ -27,6 +27,11 @@ public class Command : IDisposable
             await CreateCacheAsync(cacheName);
         }
 
+        // NB: This is false by default. We turn this on for testing:
+        // when using an aging snapshot, items will eventually expire.
+        // If we always throw out expired items, then a snapshot will eventually
+        // be useless. Hence for testing we will probably use this, but not
+        // for live migrations.
         if (resetAlreadyExpiredToDefaultTtl)
         {
             logger.LogInformation($"Resetting already expired items to use the default TTL");
@@ -98,7 +103,7 @@ public class Command : IDisposable
         var response = await client.SetAsync(cacheName, item.Key, item.Value, ttl);
         if (response is CacheSetResponse.Success)
         {
-
+            // success is a no-op. we include this branch for pattern-matching completeness
         }
         else if (response is CacheSetResponse.Error error)
         {
@@ -115,7 +120,7 @@ public class Command : IDisposable
         var response = await client.DictionarySetBatchAsync(cacheName, item.Key, item.Value, true, ttl);
         if (response is CacheDictionarySetBatchResponse.Success)
         {
-
+            // success is a no-op. we include this branch for pattern-matching completeness
         }
         else if (response is CacheDictionarySetBatchResponse.Error error)
         {
@@ -133,7 +138,7 @@ public class Command : IDisposable
         var deleteResponse = await client.ListDeleteAsync(cacheName, item.Key);
         if (deleteResponse is CacheListDeleteResponse.Success)
         {
-
+            // success is a no-op. we include this branch for pattern-matching completeness
         }
         else if (deleteResponse is CacheListDeleteResponse.Error error)
         {
@@ -149,7 +154,7 @@ public class Command : IDisposable
             var pushResponse = await client.ListPushBackAsync(cacheName, item.Key, listItem, true, ttl);
             if (pushResponse is CacheListPushBackResponse.Success)
             {
-
+                // success is a no-op. we include this branch for pattern-matching completeness
             }
             else if (pushResponse is CacheListPushBackResponse.Error pushError)
             {
@@ -176,7 +181,7 @@ public class Command : IDisposable
     }
 
 #pragma warning disable CS1998
-    // cs1998
+    // disable warnings for no "await"
     private async Task Load(string cacheName, object item, TimeSpan? ttl, string line)
     {
         logger.LogError($"unsupported_data_type: {line}");
