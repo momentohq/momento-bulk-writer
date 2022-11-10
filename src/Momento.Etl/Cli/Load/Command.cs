@@ -36,7 +36,7 @@ public class Command : IDisposable
         {
             logger.LogInformation($"Resetting already expired items to use the default TTL");
         }
-        logger.LogInformation($"Extracting and loading {filePath}");
+        logger.LogInformation($"Extracting {filePath} and loading into Momento");
         using (var stream = File.OpenText(filePath))
         {
             string? line;
