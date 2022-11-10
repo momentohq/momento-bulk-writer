@@ -17,20 +17,22 @@ ETL for users with a Redis database in hand
 |       └── Cli ..................... cli to run validator and loader
 ├── RdbToMomento.sln ................ repo solution file
 ├── LICENSE ......................... apache 2.0 license
+├── Makefile ........................ makefile to build, clean, publish, and dist
 └── README.md ....................... hey that's me
 
 ```
 
-# How to Run
+# How to Run (harder - by hand)
 
-1. Obtain an RDB file (Redis database)
-   i. Create a backup in Elasticache, or
+## Obtain an RDB file (Redis database)
 
-   ii. Run `BGSAVE` on an existing Redis instance, or
+1. Create a backup in Elasticache, or
 
-   iii. Use the `RedisLoadGenerator` project to generate a Redis database. See the project README for details.
+2. Run `BGSAVE` on an existing Redis instance, or
 
-2. Convert RDB to JSONL
+3. Use the `RedisLoadGenerator` project to generate a Redis database. See the project README for details.
+
+## Extract RDB to JSONL
 
 Use the `redisrdbcli/redis-rdb-cli` docker image to convert the Redis database (as RDB) to JSON lines. See the script `scripts/rdb_to_jsonl.sh` for an example invocation. This script mounts a host directory in the docker container so the container may read the Redis database and write the JSON lines.
 
@@ -46,7 +48,7 @@ The script assumes a directory structure where the rdb file and eventual output 
 
 To generate `snapshot.jsonl` from `snapshot.rdb`, run the script with `rdb_to_json.sh ./data redis/snapshot.rdb stage1/snapshot.jsonl`
 
-3. Validate the database
+## Validate the database
 
 i. The validate tool identifies potential incompatibilities with Momento. When running the first time, we should explore all potential incompatiblities. To do this, enable all the flags:
 
@@ -62,7 +64,7 @@ ii. After doing an initial analysis, run the tool with a relaxed set of filters.
 
 `./MomentoEtl validate --maxPayloadSize 1 snapshot.jsonl valid.jsonl error.jsonl`
 
-4. Load the data into Momento
+## Load the data into Momento
 
 To store the data in Momento, run this command:
 
@@ -80,3 +82,25 @@ Note:
 
 - By default we discard items that have already expired.
   - There is an option to not do this; see the CLI for details. (Why would we want to override this? Suppose we are testing how long it takes to load a snapshot. As the snapshot ages, more and more items will expire. Eventually it becomes useless. Hence to test how long it takes to load a particular snapshot, we want to load expired items. This way at least we estimate the worst case.)
+
+# How to Run (easier - using scripts)
+
+## Build a deployable package by running:
+
+`make dist`
+
+This produces `dist/momento_etl.tgz` with the scripts and binaries bundled together.
+
+## Extract and validate
+
+The script `extract_and_validate.sh` wraps the extract and validate steps above. We assume the same directory structure as above with a parent directory `data` and subdirectory `data/redis` that contains the rdb files. Example:
+
+`./extract_and_validate.sh path-to-data-dir linux-x64/MomentoEtl 1 1`
+
+## Load
+
+Load the data into Momento. Use `load_one.sh` to load a single file serially. Use `load_many.sh` to split the file into chunks and load in parallel. Example:
+
+`./load_one.sh path-to-validated-file linux-x64/MomentoEtl auth-token cache-name 1 1`
+
+where `path-to-validated-file` would be produced by extract and validated, eg in `data/stage3_lax/valid`.

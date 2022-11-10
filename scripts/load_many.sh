@@ -6,11 +6,22 @@
 
 set -x
 
+# Path to validated file
 data_path=$1
+
+# Path to MomentoEtl binary
 momento_etl_path=$2
+
+# Momento auth token
 auth_token=$3
+
+# Cache name to load data to
 cache_name=$4
+
+# Default TTL in days
 default_ttl=$5
+
+# Max TTL in days
 max_ttl=$6
 log_dir=${7:-logs}
 temp_dir=${8:-temp}

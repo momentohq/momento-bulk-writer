@@ -1,14 +1,21 @@
 #!/bin/bash
 set -x
 
+# Assumes rdb files located at: $data_path/redis/*rdb
+# This directory structure is necessary for the docker container
 data_path=$1
+
+# Path to MomentoEtl binary
 momento_etl_path=$2
+
+# Max payload size in MiB
 max_payload_size=$3
+
+# Max TTL in days
 max_ttl=$4
 
-
-# - Assumes rdb files located at: $data_path/redis/*rdb
-# - Writes rdb -> jsonl at $data_path/stage1
+# Assumes rdb files located at: $data_path/redis/*rdb
+# Writes rdb -> jsonl at $data_path/stage1
 # - Joins to single jsonl file in $data_path/stage2
 # - Validates with strict and lax settings to
 #   - $data_path/stage3_strict and $data_path/stage3_lax respectively
