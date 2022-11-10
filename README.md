@@ -22,6 +22,17 @@ ETL for users with a Redis database in hand
 
 ```
 
+# How to Build, Test, and Distribute
+
+- Run `make help` to see make options.
+
+- Run `make build` to build.
+
+- Run `make test` to run unit tests.
+
+- Run `make dist` to build standalone executables and package scripts.
+  - NB: this builds executables for linux, windows, and macos
+
 # How to Run (harder - by hand)
 
 ## Obtain an RDB file (Redis database)
@@ -34,7 +45,7 @@ ETL for users with a Redis database in hand
 
 ## Extract RDB to JSONL
 
-Use the `redisrdbcli/redis-rdb-cli` docker image to convert the Redis database (as RDB) to JSON lines. See the script `scripts/rdb_to_jsonl.sh` for an example invocation. This script mounts a host directory in the docker container so the container may read the Redis database and write the JSON lines.
+Use the `redisrdbcli/redis-rdb-cli` docker image to convert the Redis database (as RDB) to JSON lines. See the script `scripts/rdb-to-jsonl.sh` for an example invocation. This script mounts a host directory in the docker container so the container may read the Redis database and write the JSON lines.
 
 The script assumes a directory structure where the rdb file and eventual output share a common ancestor, eg
 
@@ -46,7 +57,7 @@ The script assumes a directory structure where the rdb file and eventual output 
 |       └── snapshot.jsonl .......... redis snapshot as json lines
 ```
 
-To generate `snapshot.jsonl` from `snapshot.rdb`, run the script with `rdb_to_json.sh ./data redis/snapshot.rdb stage1/snapshot.jsonl`
+To generate `snapshot.jsonl` from `snapshot.rdb`, run the script with `rdb-to-json.sh ./data redis/snapshot.rdb stage1/snapshot.jsonl`
 
 ## Validate the database
 
@@ -89,18 +100,18 @@ Note:
 
 `make dist`
 
-This produces `dist/momento_etl.tgz` with the scripts and binaries bundled together.
+This produces `dist/momento-etl.tgz` with the scripts and binaries bundled together.
 
 ## Extract and validate
 
-The script `extract_and_validate.sh` wraps the extract and validate steps above. We assume the same directory structure as above with a parent directory `data` and subdirectory `data/redis` that contains the rdb files. Example:
+The script `extract-and-validate.sh` wraps the extract and validate steps above. We assume the same directory structure as above with a parent directory `data` and subdirectory `data/redis` that contains the rdb files. Example:
 
-`./extract_and_validate.sh path-to-data-dir linux-x64/MomentoEtl 1 1`
+`./extract-and-validate.sh path-to-data-dir linux-x64/MomentoEtl 1 1`
 
 ## Load
 
-Load the data into Momento. Use `load_one.sh` to load a single file serially. Use `load_many.sh` to split the file into chunks and load in parallel. Example:
+Load the data into Momento. Use `load-one.sh` to load a single file serially. Use `load-many.sh` to split the file into chunks and load in parallel. Example:
 
-`./load_one.sh path-to-validated-file linux-x64/MomentoEtl auth-token cache-name 1 1`
+`./load-one.sh path-to-validated-file linux-x64/MomentoEtl auth-token cache-name 1 1`
 
-where `path-to-validated-file` would be produced by extract and validated, eg in `data/stage3_lax/valid`.
+where `path-to-validated-file` would be produced by extract and validated, eg in `data/stage3-lax/valid`.

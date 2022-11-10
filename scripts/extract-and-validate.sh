@@ -59,8 +59,8 @@ is_set_or_panic "$max_ttl" "max_ttl"
 
 stage1_path=$data_path/stage1
 stage2_path=$data_path/stage2
-stage3_strict_path=$data_path/stage3_strict
-stage3_lax_path=$data_path/stage3_lax
+stage3_strict_path=$data_path/stage3-strict
+stage3_lax_path=$data_path/stage3-lax
 
 create_path_or_panic $stage1_path
 create_path_or_panic $stage2_path

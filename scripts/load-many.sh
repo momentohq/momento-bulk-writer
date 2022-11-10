@@ -23,8 +23,11 @@ default_ttl=$5
 
 # Max TTL in days
 max_ttl=$6
-log_dir=${7:-logs}
-temp_dir=${8:-temp}
+num_lines_per_split=${7:-20000}
+temp_root=$(mktemp -u -d -t load-many-$(date +%Y-%m-%d-%H-%M-%S)-XXXXXXXXXX)
+log_dir=${8:-$temp_root/logs}
+temp_dir=${9:-$temp_root/data}
+
 
 function file_exists_or_panic() {
     if [ ! -f "$1" ]; then
@@ -33,23 +36,23 @@ function file_exists_or_panic() {
     fi
 }
 
-function dir_not_exists_or_panic() {
-    if [ -d "$1" ]; then
+function dir_exists_or_panic() {
+    if [! -d "$1" ]; then
         echo "directory $1 should not exist; remove before starting; bailing."
         exit 1
     fi
 }
 
 file_exists_or_panic $data_path
+mkdir -p $temp_dir $log_dir
 dir_not_exists_or_panic $temp_dir
-mkdir -p $temp_dir
-
+dir_not_exists_or_panic $log_dir
 
 
 filename=$(basename $data_path)
-split -l 10 $data_path $temp_dir/$filename
+split -l $num_lines_per_split $data_path $temp_dir/$filename
 
 for file in `ls $temp_dir/${filename}*`
 do
-    ./load_one.sh $file $momento_etl_path $auth_token $cache_name $default_ttl $max_ttl $log_dir &
+    ./load-one.sh $file $momento_etl_path $auth_token $cache_name $default_ttl $max_ttl $log_dir &
 done
