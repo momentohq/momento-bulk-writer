@@ -114,4 +114,4 @@ Load the data into Momento. Use `load-one.sh` to load a single file serially. Us
 
 `./load-one.sh path-to-validated-file linux-x64/MomentoEtl auth-token cache-name 1 1`
 
-where `path-to-validated-file` would be produced by extract and validated, eg in `data/stage3-lax/valid`.
+where `path-to-validated-file` would be produced by `extract-and-validated.sh`, eg in `data/stage3-lax/valid`.
