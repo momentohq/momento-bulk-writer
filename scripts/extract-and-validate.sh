@@ -104,7 +104,7 @@ done
 joined_file=$stage2_path/merged.jsonl
 rm $joined_file
 
-echo ==== STAGE 2: COALESCE JSONL
+echo ==== STAGE 2: JOIN JSONL
 
 for file in `ls $stage1_path/*jsonl`
 do
