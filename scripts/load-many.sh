@@ -45,8 +45,8 @@ function dir_exists_or_panic() {
 
 file_exists_or_panic $data_path
 mkdir -p $temp_dir $log_dir
-dir_not_exists_or_panic $temp_dir
-dir_not_exists_or_panic $log_dir
+dir_exists_or_panic $temp_dir
+dir_exists_or_panic $log_dir
 
 
 filename=$(basename $data_path)
