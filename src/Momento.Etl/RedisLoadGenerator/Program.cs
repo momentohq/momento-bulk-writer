@@ -3,6 +3,7 @@ using System.Text;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
+using Momento.Etl.Utils;
 using StackExchange.Redis;
 
 namespace Momento.Etl.RedisLoadGenerator;
@@ -13,16 +14,7 @@ public class Program
 
     static Program()
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.SingleLine = true;
-                options.TimestampFormat = "hh:mm:ss ";
-            });
-            builder.SetMinimumLevel(LogLevel.Information);
-        });
+        var loggerFactory = LoggerUtils.CreateConsoleLoggerFactory();
         logger = loggerFactory.CreateLogger<Program>();
     }
 

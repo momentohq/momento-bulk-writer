@@ -3,10 +3,10 @@ using System;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
+using Momento.Etl.Utils;
 using Momento.Sdk.Auth;
 using Momento.Sdk.Config;
 using Momento.Sdk.Incubating;
-
 
 namespace Momento.Etl.Cli;
 
@@ -17,16 +17,7 @@ public class Program
 
     static Program()
     {
-        loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.SingleLine = true;
-                options.TimestampFormat = "hh:mm:ss ";
-            });
-            builder.SetMinimumLevel(LogLevel.Information);
-        });
+        loggerFactory = LoggerUtils.CreateConsoleLoggerFactory();
         logger = loggerFactory.CreateLogger<Program>();
     }
 
