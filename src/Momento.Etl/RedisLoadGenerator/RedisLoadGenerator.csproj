@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="commandlineparser" Version="2.9.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.70" />
   </ItemGroup>
 
