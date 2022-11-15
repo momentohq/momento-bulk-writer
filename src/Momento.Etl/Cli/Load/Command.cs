@@ -170,7 +170,11 @@ public class Command : IDisposable
     private async Task Load(string cacheName, RedisSet item, TimeSpan? ttl, string line)
     {
         var response = await client.SetAddBatchAsync(cacheName, item.Key, item.Value, true, ttl);
-        if (response is CacheSetAddBatchResponse.Error error)
+        if (response is CacheSetAddBatchResponse.Success)
+        {
+            // success is a no-op. we include this branch for pattern-matching completeness
+        }
+        else if (response is CacheSetAddBatchResponse.Error error)
         {
             logger.LogError($"error_storing: {error.Message}; {line}");
         }
