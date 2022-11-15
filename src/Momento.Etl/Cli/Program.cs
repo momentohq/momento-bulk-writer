@@ -65,7 +65,9 @@ public class Program
             }
 
             logger.LogInformation($"Loading to {options.CacheName} with a default TTL of {options.DefaultTtlTimeSpan} and max TTL of {options.MaxTtlTimeSpan}");
-            var config = Configurations.InRegion.Default.Latest(loggerFactory);
+            // Previously we used the InRegion.Latest config. Because we can saturate the network when doing an import,
+            // we opt to use a config we more relaxed timeouts.
+            var config = Configurations.Laptop.Latest(loggerFactory);
             var authProvider = new StringMomentoTokenProvider(options.AuthToken);
             var client = SimpleCacheClientFactory.CreateClient(config, authProvider, options.DefaultTtlTimeSpan);
 
