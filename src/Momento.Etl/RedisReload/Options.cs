@@ -14,11 +14,15 @@ public class Options
     [Option("startupDelay", Required = false, HelpText = "Number of seconds to wait for Redis to start before running load gen.")]
     public int StartupDelay { get; set; } = 3;
 
+    [Option("DefaulTtl", Required = false, HelpText = "TTL in days to use to overwrite existing TTLs.")]
+    public int DefaultTtl { get; set; } = 5000;
+
     [Value(0, Required = true, HelpText = "Path to Redis dump as JSONL.")]
     public string RedisDumpJsonlPath { get; set; } = default!;
 
     public void Validate()
     {
         OptionUtils.TryOpenFile(RedisDumpJsonlPath);
+        OptionUtils.AssertStrictlyPositive(DefaultTtl, "DefaultTtl");
     }
 }

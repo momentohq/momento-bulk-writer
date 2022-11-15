@@ -13,7 +13,7 @@ namespace Momento.Etl.RedisLoadGenerator;
 public class Program
 {
     private static ILogger logger;
-    private static TimeSpan maxTtl = TimeSpan.FromDays(5000);
+    private static TimeSpan defaultTtl;
     private static IDatabase client = null!;
 
     static Program()
@@ -79,6 +79,9 @@ public class Program
             Environment.Exit(1);
         }
 
+        logger.LogInformation($"Using default TTL of {options.DefaultTtl}d");
+        defaultTtl = TimeSpan.FromDays(options.DefaultTtl);
+
         logger.LogInformation($"Loading from {options.RedisDumpJsonlPath} items");
 
         using (var stream = File.OpenText(options.RedisDumpJsonlPath))
@@ -114,7 +117,7 @@ public class Program
             await Load(item as dynamic);
             if (item.Expiry.HasValue)
             {
-                await client.KeyExpireAsync(item.Key, maxTtl);
+                await client.KeyExpireAsync(item.Key, defaultTtl);
             }
         }
         else if (result is JsonParseResult.Error error)
