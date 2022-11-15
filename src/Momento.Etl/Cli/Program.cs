@@ -64,7 +64,7 @@ public class Program
                 await ExitUtils.DelayedExit(1);
             }
 
-            logger.LogInformation($"Loading to {options.CacheName} with a default TTL of {options.DefaultTtlTimeSpan} and max TTL of {options.MaxTtlTimeSpan}");
+            logger.LogInformation($"Loading to {options.CacheName} with a default TTL of {options.DefaultTtlTimeSpan} and clipping excessive TTLs to the cache limit.");
             // Previously we used the InRegion.Latest config. Because we can saturate the network when doing an import,
             // we opt to use a config we more relaxed timeouts.
             var config = Configurations.Laptop.Latest(loggerFactory);
@@ -72,7 +72,7 @@ public class Program
             var client = SimpleCacheClientFactory.CreateClient(config, authProvider, options.DefaultTtlTimeSpan);
 
             var command = new Load.Command(loggerFactory, client, options.CreateCache);
-            await command.RunAsync(options.CacheName, options.FilePath, options.MaxTtlTimeSpan, options.ResetAlreadyExpiredToDefaultTtl);
+            await command.RunAsync(options.CacheName, options.FilePath, options.ResetAlreadyExpiredToDefaultTtl);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }

@@ -20,7 +20,7 @@ public class Command : IDisposable
         this.createCache = createCache;
     }
 
-    public async Task RunAsync(string cacheName, string filePath, TimeSpan maxTtl, bool resetAlreadyExpiredToDefaultTtl = false)
+    public async Task RunAsync(string cacheName, string filePath, bool resetAlreadyExpiredToDefaultTtl = false)
     {
         if (createCache)
         {
@@ -43,7 +43,7 @@ public class Command : IDisposable
             int linesProcessed = 0;
             while ((line = stream.ReadLine()) != null)
             {
-                await ProcessLine(cacheName, line, maxTtl, resetAlreadyExpiredToDefaultTtl);
+                await ProcessLine(cacheName, line, resetAlreadyExpiredToDefaultTtl);
                 linesProcessed++;
                 if (linesProcessed % 10_000 == 0)
                 {
@@ -55,7 +55,7 @@ public class Command : IDisposable
     }
 
 
-    private async Task ProcessLine(string cacheName, string line, TimeSpan maxTtl, bool resetAlreadyExpiredToDefaultTtl = false)
+    private async Task ProcessLine(string cacheName, string line, bool resetAlreadyExpiredToDefaultTtl = false)
     {
         line = line.Trim();
         if (line.Equals(""))
@@ -81,11 +81,8 @@ public class Command : IDisposable
                     return;
                 }
             }
-            else if (ttl > maxTtl)
-            {
-                logger.LogInformation($"clipping_ttl: {line}");
-                ttl = maxTtl;
-            }
+            // NB: if the TTL from the data exceeds the service limit, the service
+            // will clip to the cache-specific max.
             await Load(cacheName, item as dynamic, ttl, line);
         }
         else if (result is JsonParseResult.Error error)
