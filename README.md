@@ -118,3 +118,7 @@ Load the data into Momento. Use `load-one.sh` to load a single file serially. Us
 `./load-one.sh path-to-validated-file auth-token cache-name 1`
 
 where `path-to-validated-file` would be produced by `extract-and-validated.sh`, eg in `data/stage3-lax/valid`.
+
+# Run from an EC2 instance
+
+We tested using an m6a.2xlarge using the user-data script in `scripts/ec2-user-data.sh` to bootstrap the instance. We then used `make dist` to build the tool, copy to the instance, and run on the data. We recommend splitting the input file into a maximum of 10 chunks.
