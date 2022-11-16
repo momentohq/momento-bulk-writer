@@ -21,12 +21,10 @@ cache_name=$4
 # Default TTL in days
 default_ttl=$5
 
-# Max TTL in days
-max_ttl=$6
-num_lines_per_split=${7:-20000}
+num_lines_per_split=${6:-20000}
 temp_root=$(mktemp -u -d -t load-many-$(date +%Y-%m-%d-%H-%M-%S)-XXXXXXXXXX)
-log_dir=${8:-$temp_root/logs}
-temp_dir=${9:-$temp_root/data}
+log_dir=${7:-$temp_root/logs}
+temp_dir=${8:-$temp_root/data}
 
 
 function file_exists_or_panic() {

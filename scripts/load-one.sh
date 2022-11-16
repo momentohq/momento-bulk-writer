@@ -19,9 +19,7 @@ cache_name=$4
 # Default TTL in days
 default_ttl=$5
 
-# Max TTL in days
-max_ttl=$6
-log_dir=${7:-logs}
+log_dir=${6:-logs}
 
 
 function dir_exists_or_panic() {
@@ -51,7 +49,6 @@ file_exists_or_panic $momento_etl_path
 is_set_or_panic $auth_token "auth_token"
 is_set_or_panic $cache_name "cache_name"
 is_set_or_panic $default_ttl "default_ttl"
-is_set_or_panic $max_ttl "max_ttl"
 if [ "$log_dir" = "logs" ]
 then
     mkdir -p $log_dir
@@ -64,7 +61,6 @@ $momento_etl_path load \
     -a $auth_token \
 	-c $cache_name \
 	--defaultTtl $default_ttl \
-	--maxTtl $max_ttl \
 	$data_path 2>&1 > $log_path
 
 if [ $? -ne 0 ]
