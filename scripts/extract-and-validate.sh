@@ -67,6 +67,9 @@ create_path_or_panic $stage2_path
 create_path_or_panic $stage3_strict_path
 create_path_or_panic $stage3_lax_path
 
+# Flush any data from previous runs
+rm -f $stage1_path/* $stage2_path/* $stage3_strict_path/* $stage3_lax_path/*
+
 ###############
 # STAGE 1: RDB -> JSONL
 ###############
