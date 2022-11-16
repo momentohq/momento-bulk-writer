@@ -7,17 +7,17 @@ set -x
 # Path to validated file
 data_path=$1
 
-# Path to MomentoEtl binary
-momento_etl_path=$2
-
 # Momento auth token
-auth_token=$3
+auth_token=$2
 
 # Cache name to load data to
-cache_name=$4
+cache_name=$3
 
 # Default TTL in days
-default_ttl=$5
+default_ttl=$4
+
+# Path to MomentoEtl binary
+momento_etl_path=${5:-linux-x64/MomentoEtl}
 
 log_dir=${6:-logs}
 

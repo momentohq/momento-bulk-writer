@@ -9,19 +9,20 @@ set -x
 # Path to validated file
 data_path=$1
 
-# Path to MomentoEtl binary
-momento_etl_path=$2
-
 # Momento auth token
-auth_token=$3
+auth_token=$2
 
 # Cache name to load data to
-cache_name=$4
+cache_name=$3
 
 # Default TTL in days
-default_ttl=$5
+default_ttl=$4
 
-num_lines_per_split=${6:-20000}
+num_lines_per_split=${5:-20000}
+
+# Path to MomentoEtl binary
+momento_etl_path=${6:-linux-x64/MomentoEtl}
+
 temp_root=$(mktemp -u -d -t load-many-$(date +%Y-%m-%d-%H-%M-%S)-XXXXXXXXXX)
 log_dir=${7:-$temp_root/logs}
 temp_dir=${8:-$temp_root/data}
@@ -52,5 +53,5 @@ split -l $num_lines_per_split $data_path $temp_dir/$filename
 
 for file in `ls $temp_dir/${filename}*`
 do
-    ./load-one.sh $file $momento_etl_path $auth_token $cache_name $default_ttl $max_ttl $log_dir &
+    ./load-one.sh $file $auth_token $cache_name $default_ttl $momento_etl_path $log_dir &
 done
