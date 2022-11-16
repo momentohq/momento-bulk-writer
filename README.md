@@ -121,4 +121,4 @@ where `path-to-validated-file` would be produced by `extract-and-validated.sh`, 
 
 # Run from an EC2 instance
 
-We tested using an m6a.2xlarge using the user-data script in `scripts/ec2-user-data.sh` to bootstrap the instance. We then used `make dist` to build the tool, copy to the instance, and run on the data. We recommend splitting the input file into a maximum of 10 chunks.
+We tested using an m6a.2xlarge with 64GB disk space, using `scripts/ec2-user-data.sh` to bootstrap the instance. We then used `make dist` to build the tool, copy to the instance, and run on the data. We recommend splitting the input file into a maximum of 10 chunks.
