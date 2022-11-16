@@ -80,22 +80,24 @@ ii. After doing an initial analysis, run the tool with a relaxed set of filters.
 
 To store the data in Momento, run this command:
 
-`./MomentoEtl load -a <AUTH-TOKEN> -c <CACHE-NAME> --defaultTtl <DEFAULT-TTL> --maxTtl <MAX-TTL> <DATA-PATH>`
+`./MomentoEtl load -a <AUTH-TOKEN> -c <CACHE-NAME> --defaultTtl <DEFAULT-TTL> <DATA-PATH>`
 
 Asssuming we created a `valid.jsonl` file from step 3, we would run:
 
-`./MomentoEtl load -a <AUTH-TOKEN> -c <CACHE-NAME> --defaultTtl 1 --maxTtl 1 valid.jsonl`
+`./MomentoEtl load -a <AUTH-TOKEN> -c <CACHE-NAME> --defaultTtl 1 valid.jsonl`
 
 Note:
 
 - We assume that the cache has already been created. We recommend this since, because loading the data all at once demands much rate and throughput, the cache limits ought to be adjusted beforehand. If we create the caache as part of the load command, then limits will be default and too low.
 
-- The `maxTtl` option is used to clip excessive TTLs. Eg if a cache has a limit of 1 day TTL and an item has two days left to expire, we will load it with a TTL of 1 day. Similarly if an item lacks a TTL, we will apply `defaultTtl` in days.
+- The service clips TTLs to be at most the cache-specific TTL.
 
 - By default we discard items that have already expired.
   - There is an option to not do this; see the CLI for details. (Why would we want to override this? Suppose we are testing how long it takes to load a snapshot. As the snapshot ages, more and more items will expire. Eventually it becomes useless. Hence to test how long it takes to load a particular snapshot, we want to load expired items. This way at least we estimate the worst case.)
 
 # How to Run (easier - using scripts)
+
+We have authored scripts to automate the above steps. We assume they will run on AMI instances (Linux), hence they invoke the Linux build. Change this if you intend on running in a different environment.
 
 ## Build a deployable package by running:
 
@@ -107,12 +109,16 @@ This produces `dist/momento-etl.tgz` with the scripts and binaries bundled toget
 
 The script `extract-and-validate.sh` wraps the extract and validate steps above. We assume the same directory structure as above with a parent directory `data` and subdirectory `data/redis` that contains the rdb files. Example:
 
-`./extract-and-validate.sh path-to-data-dir linux-x64/MomentoEtl 1 1`
+`./extract-and-validate.sh path-to-data-dir 1 1`
 
 ## Load
 
 Load the data into Momento. Use `load-one.sh` to load a single file serially. Use `load-many.sh` to split the file into chunks and load in parallel. Example:
 
-`./load-one.sh path-to-validated-file linux-x64/MomentoEtl auth-token cache-name 1 1`
+`./load-one.sh path-to-validated-file auth-token cache-name 1`
 
 where `path-to-validated-file` would be produced by `extract-and-validated.sh`, eg in `data/stage3-lax/valid`.
+
+# Run from an EC2 instance
+
+We tested using an m6a.2xlarge with 64GB disk space, using `scripts/ec2-user-data.sh` to bootstrap the instance. We then used `make dist` to build the tool, copy to the instance, and run on the data. We recommend splitting the input file into a maximum of 10 chunks.

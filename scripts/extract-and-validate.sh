@@ -5,14 +5,15 @@ set -x
 # This directory structure is necessary for the docker container
 data_path=$1
 
-# Path to MomentoEtl binary
-momento_etl_path=$2
-
 # Max payload size in MiB
-max_payload_size=$3
+max_payload_size=$2
 
 # Max TTL in days
-max_ttl=$4
+max_ttl=$3
+
+# Path to MomentoEtl binary
+momento_etl_path=${4:-linux-x64/MomentoEtl}
+
 
 # Assumes rdb files located at: $data_path/redis/*rdb
 # Writes rdb -> jsonl at $data_path/stage1
@@ -66,6 +67,9 @@ create_path_or_panic $stage1_path
 create_path_or_panic $stage2_path
 create_path_or_panic $stage3_strict_path
 create_path_or_panic $stage3_lax_path
+
+# Flush any data from previous runs
+rm -f $stage1_path/* $stage2_path/* $stage3_strict_path/* $stage3_lax_path/*
 
 ###############
 # STAGE 1: RDB -> JSONL

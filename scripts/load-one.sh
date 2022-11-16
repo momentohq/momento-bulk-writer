@@ -7,21 +7,19 @@ set -x
 # Path to validated file
 data_path=$1
 
-# Path to MomentoEtl binary
-momento_etl_path=$2
-
 # Momento auth token
-auth_token=$3
+auth_token=$2
 
 # Cache name to load data to
-cache_name=$4
+cache_name=$3
 
 # Default TTL in days
-default_ttl=$5
+default_ttl=$4
 
-# Max TTL in days
-max_ttl=$6
-log_dir=${7:-logs}
+# Path to MomentoEtl binary
+momento_etl_path=${5:-linux-x64/MomentoEtl}
+
+log_dir=${6:-logs}
 
 
 function dir_exists_or_panic() {
@@ -51,7 +49,6 @@ file_exists_or_panic $momento_etl_path
 is_set_or_panic $auth_token "auth_token"
 is_set_or_panic $cache_name "cache_name"
 is_set_or_panic $default_ttl "default_ttl"
-is_set_or_panic $max_ttl "max_ttl"
 if [ "$log_dir" = "logs" ]
 then
     mkdir -p $log_dir
@@ -64,7 +61,6 @@ $momento_etl_path load \
     -a $auth_token \
 	-c $cache_name \
 	--defaultTtl $default_ttl \
-	--maxTtl $max_ttl \
 	$data_path 2>&1 > $log_path
 
 if [ $? -ne 0 ]
