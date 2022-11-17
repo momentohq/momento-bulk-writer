@@ -58,14 +58,14 @@ public class Command
     private async Task<int> WriteChunk(StreamReader inputStream, int numLinesPerChunk, string outputFilePath)
     {
         using var outStream = new StreamWriter(outputFilePath, append: false);
-        var lineNumberInChunk = 1;
+        var lineNumberInChunk = 0;
         string? line;
-        while (lineNumberInChunk <= numLinesPerChunk && (line = inputStream.ReadLine()) != null)
+        while (lineNumberInChunk < numLinesPerChunk && (line = inputStream.ReadLine()) != null)
         {
             await outStream.WriteLineAsync(line);
             lineNumberInChunk++;
         }
-        return lineNumberInChunk - 1;
+        return lineNumberInChunk;
     }
 
     private string IntToStringWithPadding(int number, int paddingReferenceNumber)
