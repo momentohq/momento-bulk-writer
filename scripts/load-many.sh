@@ -18,7 +18,7 @@ cache_name=$3
 # Default TTL in days
 default_ttl=$4
 
-num_lines_per_split=${5:-20000}
+num_chunks=${5:-10}
 
 # Path to MomentoEtl binary
 momento_etl_path=${6:-linux-x64/MomentoEtl}
@@ -49,7 +49,7 @@ dir_exists_or_panic $log_dir
 
 
 filename=$(basename $data_path)
-split -l $num_lines_per_split $data_path $temp_dir/$filename
+$momento_etl_path split -n $num_chunks $data_path $temp_dir/$filename
 
 for file in `ls $temp_dir/${filename}*`
 do

@@ -36,7 +36,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var parser = new CommandLine.Parser(with => with.HelpWriter = null);
-        var result = parser.ParseArguments<Validate.Options, Load.Options>(args);
+        var result = parser.ParseArguments<Validate.Options, Split.Options, Load.Options>(args);
         result = await result.WithParsedAsync<Validate.Options>(async options =>
         {
             try
@@ -50,6 +50,21 @@ public class Program
             }
 
             var command = new Validate.Command(loggerFactory);
+            await command.RunAsync(options);
+        });
+        result = await result.WithParsedAsync<Split.Options>(async options =>
+        {
+            try
+            {
+                options.Validate();
+            }
+            catch (Exception e)
+            {
+                logger.LogError($"Error validating CLI options: {e.Message}");
+                await ExitUtils.DelayedExit(1);
+            }
+
+            var command = new Split.Command(loggerFactory);
             await command.RunAsync(options);
         });
         result = await result.WithParsedAsync<Load.Options>(async options =>
