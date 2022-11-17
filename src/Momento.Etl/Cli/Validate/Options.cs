@@ -6,8 +6,8 @@ namespace Momento.Etl.Cli.Validate;
 [Verb("validate", HelpText = "validate redis data for momento")]
 public class Options
 {
-    [Option("maxPayloadSize", Required = false, HelpText = "Max payload size in MiB, inclusive. Defaults to 1.")]
-    public int MaxPayloadSize { get; set; } = 1;
+    [Option("maxItemSize", Required = false, HelpText = "Max item size in MiB, inclusive. Defaults to 1.")]
+    public int MaxItemSize { get; set; } = 1;
 
     [Option("filterLargeData", Required = false, HelpText = "Test for payloads that exceed the max. Defaults to true.")]
     public bool FilterLargeData { get; set; } = true;
@@ -36,7 +36,7 @@ public class Options
     public void Validate()
     {
         OptionUtils.TryOpenFile(DataFilePath);
-        OptionUtils.AssertStrictlyPositive(MaxPayloadSize, "maxPayloadSize");
+        OptionUtils.AssertStrictlyPositive(MaxItemSize, "maxItemSize");
         OptionUtils.AssertStrictlyPositive(MaxTtl, "maxTtl");
     }
 }

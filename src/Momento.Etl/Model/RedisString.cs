@@ -10,9 +10,9 @@ public record RedisString : RedisItem
         this.Expiry = expiry;
     }
 
-    public override int PayloadSizeInBytes()
+    public override int ItemSizeInBytes()
     {
-        return base.PayloadSizeInBytes() + Value.PayloadSizeInBytes();
+        return base.ItemSizeInBytes() + Value.ItemSizeInBytes();
     }
 
     public override string ToString()

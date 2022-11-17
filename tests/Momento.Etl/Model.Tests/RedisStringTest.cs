@@ -10,6 +10,6 @@ public class RedisStringTest
     public void PayloadSizeInBytes_HasExpiry_HappyPath()
     {
         var item = new RedisString("key", "value", 123);
-        Assert.Equal(16, item.PayloadSizeInBytes());
+        Assert.Equal(16, item.ItemSizeInBytes());
     }
 }

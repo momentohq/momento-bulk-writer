@@ -11,6 +11,6 @@ public class RedisSetTest
     public void PayloadSizeInBytes_HasExpiry_HappyPath()
     {
         var item = new RedisSet("key", new List<string>() { "hello", "hola" }, 123);
-        Assert.Equal(20, item.PayloadSizeInBytes());
+        Assert.Equal(20, item.ItemSizeInBytes());
     }
 }

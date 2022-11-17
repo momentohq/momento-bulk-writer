@@ -5,8 +5,8 @@ set -x
 # This directory structure is necessary for the docker container
 data_path=$1
 
-# Max payload size in MiB
-max_payload_size=$2
+# Max item size in MiB
+max_item_size=$2
 
 # Max TTL in days
 max_ttl=$3
@@ -55,7 +55,7 @@ function is_set_or_panic() {
 
 dir_exists_or_panic $data_path
 file_exists_or_panic $momento_etl_path
-is_set_or_panic "$max_payload_size" "max_payload_size"
+is_set_or_panic "$max_item_size" "max_item_size"
 is_set_or_panic "$max_ttl" "max_ttl"
 
 stage1_path=$data_path/stage1
@@ -123,7 +123,7 @@ done
 
 # STRICT
 $momento_etl_path validate \
-    --maxPayloadSize $max_payload_size \
+    --maxItemSize $max_item_size \
     --maxTtl $max_ttl --filterLongTtl \
     --filterAlreadyExpired \
     --filterMissingTtl \
@@ -138,7 +138,7 @@ fi
 
 # LAX
 $momento_etl_path validate \
-    --maxPayloadSize $max_payload_size \
+    --maxItemSize $max_item_size \
     $joined_file $stage3_lax_path/valid $stage3_lax_path/error \
     2>&1 | tee $stage3_lax_path/log
 

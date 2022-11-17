@@ -5,12 +5,12 @@ using Xunit;
 
 namespace Momento.Etl.Validation.Tests;
 
-public class PayloadSizeValidatorTest
+public class ItemSizeValidatorTest
 {
     [Fact]
     public void Validate_InLimits_OK()
     {
-        var validator = new PayloadSizeValidator(1);
+        var validator = new ItemSizeValidator(1);
         var result = validator.Validate(new RedisString("hello", "world", 123));
         Assert.True(result is ValidationResult.OK, $"result was not OK, instead was {result.GetType().Name}");
     }
@@ -23,10 +23,10 @@ public class PayloadSizeValidatorTest
         // Since the expiry is 8 bytes, we make the key and value large enough for it all to equal 1 MiB
         var largeString = Utils.RepeatChar('a', (1024 * 1024) / 2 - 4);
         var item = new RedisString(largeString, largeString);
-        Assert.Equal(1024 * 1024, item.PayloadSizeInBytes());
+        Assert.Equal(1024 * 1024, item.ItemSizeInBytes());
 
         // Test max size inclusive
-        var validator = new PayloadSizeValidator(1);
+        var validator = new ItemSizeValidator(1);
         var result = validator.Validate(item);
         Assert.True(result is ValidationResult.OK);
     }
@@ -39,10 +39,10 @@ public class PayloadSizeValidatorTest
         var largeString1 = Utils.RepeatChar('a', (1024 * 1024) / 2 - 4);
         var largeString2 = largeString1 + 'a';
         var item = new RedisString(largeString1, largeString2);
-        Assert.Equal(1024 * 1024 + 1, item.PayloadSizeInBytes());
+        Assert.Equal(1024 * 1024 + 1, item.ItemSizeInBytes());
 
         // Test max size inclusive
-        var validator = new PayloadSizeValidator(1);
+        var validator = new ItemSizeValidator(1);
         var result = validator.Validate(item);
         Assert.True(result is ValidationResult.Error, $"result wasn't Error, instead was {result.GetType().Name}");
         ValidationResult.Error error = (ValidationResult.Error)result;

@@ -12,7 +12,7 @@ public static class Extensions
     /// </summary>
     /// <param name="s"></param>
     /// <returns></returns>
-    public static int PayloadSizeInBytes(this string s)
+    public static int ItemSizeInBytes(this string s)
     {
         if (s is null)
         {

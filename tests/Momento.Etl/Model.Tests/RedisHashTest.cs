@@ -11,6 +11,6 @@ public class RedisHashTest
     public void PayloadSizeInBytes_HasExpiry_HappyPath()
     {
         var item = new RedisHash("key", new Dictionary<string, string>() { { "hello", "hola" }, { "goodbye", "adios" } }, 123);
-        Assert.Equal(32, item.PayloadSizeInBytes());
+        Assert.Equal(32, item.ItemSizeInBytes());
     }
 }
