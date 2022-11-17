@@ -5,18 +5,18 @@ namespace Momento.Etl.Validation;
 /// <summary>
 /// Tests whether an item size is within the max limit.
 /// </summary>
-public class PayloadSizeValidator : IDataValidator
+public class ItemSizeValidator : IDataValidator
 {
     private readonly int maxSizeInBytes;
 
-    public PayloadSizeValidator(int maxSizeInMiB)
+    public ItemSizeValidator(int maxSizeInMiB)
     {
         maxSizeInBytes = maxSizeInMiB * 1024 * 1024;
     }
 
     public ValidationResult Validate(RedisItem item)
     {
-        if (item.PayloadSizeInBytes() <= maxSizeInBytes)
+        if (item.ItemSizeInBytes() <= maxSizeInBytes)
         {
             return ValidationResult.OK.Instance;
         }

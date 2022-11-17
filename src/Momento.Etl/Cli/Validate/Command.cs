@@ -22,8 +22,8 @@ public class Command
         var dataValidators = new DataValidatorChain();
         if (options.FilterLargeData)
         {
-            logger.LogInformation($"Filtering payloads larger than {options.MaxPayloadSize}MiB");
-            dataValidators.AddDataValidator(new PayloadSizeValidator(options.MaxPayloadSize));
+            logger.LogInformation($"Filtering items larger than {options.MaxItemSize}MiB");
+            dataValidators.AddDataValidator(new ItemSizeValidator(options.MaxItemSize));
         }
         if (options.FilterLongTtl)
         {

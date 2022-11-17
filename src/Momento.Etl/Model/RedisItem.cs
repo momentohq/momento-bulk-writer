@@ -38,10 +38,10 @@ public abstract record RedisItem
     /// Used to validate if an item is too large for the cache.
     /// </summary>
     /// <returns></returns>
-    public virtual int PayloadSizeInBytes()
+    public virtual int ItemSizeInBytes()
     {
         // We always include the expiry because Momento requires one, even though Redis does not.
         var sizeOfExpiry = sizeof(long);
-        return Key.PayloadSizeInBytes() + sizeOfExpiry;
+        return Key.ItemSizeInBytes() + sizeOfExpiry;
     }
 }

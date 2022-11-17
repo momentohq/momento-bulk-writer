@@ -14,9 +14,9 @@ public record RedisHash : RedisItem
         this.Expiry = expiry;
     }
 
-    public override int PayloadSizeInBytes()
+    public override int ItemSizeInBytes()
     {
-        return base.PayloadSizeInBytes() + Value.Sum(item => item.Key.PayloadSizeInBytes() + item.Value.PayloadSizeInBytes());
+        return base.ItemSizeInBytes() + Value.Sum(item => item.Key.ItemSizeInBytes() + item.Value.ItemSizeInBytes());
     }
 
     public override string ToString()

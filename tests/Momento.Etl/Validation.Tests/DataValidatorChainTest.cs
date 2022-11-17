@@ -21,7 +21,7 @@ public class DataValidatorChainTest
     public void Validate_ThreeValidators_HappyPath()
     {
         var validators = new List<IDataValidator>()
-            { new HasTtlValidator(), new TtlInRangeValidator(TimeSpan.FromHours(1)), new PayloadSizeValidator(1) };
+            { new HasTtlValidator(), new TtlInRangeValidator(TimeSpan.FromHours(1)), new ItemSizeValidator(1) };
         var chain = new DataValidatorChain(validators);
 
         var result = chain.Validate(new RedisString("hello", "world", DateTime.Now.ToUnixTimeMilliseconds()));

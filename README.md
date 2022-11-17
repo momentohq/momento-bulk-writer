@@ -64,7 +64,7 @@ To generate `snapshot.jsonl` from `snapshot.rdb`, run the script with `rdb-to-js
 
 i. The validate tool identifies potential incompatibilities with Momento. When running the first time, we should explore all potential incompatiblities. To do this, enable all the flags:
 
-`./MomentoEtl validate --maxTtl <MAX-TTL-IN-DAYS> --maxPayloadSize <MAX-SIZE-IN-MiB-OF-ITEM> --filterLongTtl --filterAlreadyExpired --filterMissingTtl <DATA-PATH> <VALID-PATH> <ERROR-PATH>`
+`./MomentoEtl validate --maxTtl <MAX-TTL-IN-DAYS> --maxItemSize <MAX-SIZE-IN-MiB-OF-ITEM> --filterLongTtl --filterAlreadyExpired --filterMissingTtl <DATA-PATH> <VALID-PATH> <ERROR-PATH>`
 
 For example:
 
@@ -74,7 +74,7 @@ Which reads from `snapshot.jsonl`, writes data that passes the filters to `valid
 
 ii. After doing an initial analysis, run the tool with a relaxed set of filters. Because a TTL that is too long can be clipped, a missing one can have one applied, etc. we can still store these items. Because an item that is too large is not recoverable and neither is an unsupported data type, we still filter those:
 
-`./MomentoEtl validate --maxPayloadSize 1 snapshot.jsonl valid.jsonl error.jsonl`
+`./MomentoEtl validate --maxItemSize 1 snapshot.jsonl valid.jsonl error.jsonl`
 
 ## Load the data into Momento
 
