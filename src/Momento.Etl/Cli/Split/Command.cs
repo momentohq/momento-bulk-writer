@@ -68,11 +68,17 @@ public class Command
         return lineNumberInChunk;
     }
 
+    /// <summary>
+    /// Convert int to string and pad with leading zeros until as long as reference number.
+    /// </summary>
+    /// <param name="number">Number to convert to string with padding</param>
+    /// <param name="paddingReferenceNumber">Number to use to calculate zero padding</param>
+    /// <returns></returns>
     private string IntToStringWithPadding(int number, int paddingReferenceNumber)
     {
         var intString = $"{number}";
         var refenceNumber = $"{paddingReferenceNumber}";
-        var numLeadingZeros = refenceNumber.Length - intString.Length;
+        var numLeadingZeros = Math.Max(0, refenceNumber.Length - intString.Length);
         var sb = new StringBuilder();
         foreach (var i in Enumerable.Range(1, numLeadingZeros))
         {
