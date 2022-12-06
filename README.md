@@ -107,6 +107,8 @@ where `<DATA-PATH>` could be the same file loaded into Momento. To run on a rand
 
 to get a random sample of size N, then use this file as input to the verify subcommand.
 
+To examine the output, items that match are logged with a line ending in "- OK". Hence to find all problematic items, run `grep -v "- OK"` on the log.
+
 # How to Run (easier - using scripts)
 
 We have authored scripts to automate the above steps. We assume they will run on AMI instances (Linux), hence they invoke the Linux build. Change this if you intend on running in a different environment.
