@@ -36,7 +36,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var parser = new CommandLine.Parser(with => with.HelpWriter = null);
-        var result = parser.ParseArguments<Validate.Options, Split.Options, Load.Options>(args);
+        var result = parser.ParseArguments<Validate.Options, Split.Options, Load.Options, Verify.Options>(args);
         result = await result.WithParsedAsync<Validate.Options>(async options =>
         {
             try
@@ -88,6 +88,28 @@ public class Program
 
             var command = new Load.Command(loggerFactory, client, options.CreateCache);
             await command.RunAsync(options.CacheName, options.FilePath, options.ResetAlreadyExpiredToDefaultTtl);
+        });
+        result = await result.WithParsedAsync<Verify.Options>(async options =>
+        {
+            try
+            {
+                options.Validate();
+            }
+            catch (Exception e)
+            {
+                logger.LogError($"Error validating CLI options: {e.Message}");
+                await ExitUtils.DelayedExit(1);
+            }
+
+            logger.LogInformation($"Verifying {options.CacheName}.");
+            // Previously we used the InRegion.Latest config. Because we can saturate the network when doing an import,
+            // we opt to use a config we more relaxed timeouts.
+            var config = Configurations.Laptop.Latest(loggerFactory);
+            var authProvider = new StringMomentoTokenProvider(options.AuthToken);
+            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromMinutes(1));
+
+            var command = new Verify.Command(loggerFactory, client);
+            await command.RunAsync(options.CacheName, options.FilePath);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }
