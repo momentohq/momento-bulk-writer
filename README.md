@@ -101,11 +101,11 @@ We can also verify that the data we used the load step matches what is in Moment
 
 `./MomentoEtl verify -a <AUTH-TOKEN> -c <CACHE-NAME> <DATA-PATH>`
 
-where `<DATA-PATH>` could be the same file loaded into Momento. To get a random sample, run:
+where `<DATA-PATH>` could be the same file loaded into Momento. To run on a random sample instead, run:
 
 `shuf -n N <DATA-PATH> > random_sample`
 
-to get a random sample of size N.
+to get a random sample of size N, then use this file as input to the verify subcommand.
 
 # How to Run (easier - using scripts)
 
