@@ -15,7 +15,7 @@ ETL for users with a Redis database in hand
 │       ├── RedisReload ............. redis reload data with default ttl
 |       ├── Model ................... redis data model basd on redis-rdb-cli jsonl
 |       ├── Validation .............. momento-redis data validation
-|       └── Cli ..................... cli to run validator and loader
+|       └── Cli ..................... cli to run validator, loader, and verifier
 ├── RdbToMomento.sln ................ repo solution file
 ├── LICENSE ......................... apache 2.0 license
 ├── Makefile ........................ makefile to build, clean, publish, and dist
@@ -94,6 +94,20 @@ Note:
 
 - By default we discard items that have already expired.
   - There is an option to not do this; see the CLI for details. (Why would we want to override this? Suppose we are testing how long it takes to load a snapshot. As the snapshot ages, more and more items will expire. Eventually it becomes useless. Hence to test how long it takes to load a particular snapshot, we want to load expired items. This way at least we estimate the worst case.)
+
+## (optional) Verify the data in Momento matches what is on disk
+
+We can also verify that the data we used the load step matches what is in Momento. The `verify` subcommand reads a json lines data file from disk, queries Momento for each of the items, and verifies the data matches. This is a sanity check that _should_ succeed, modulo items that already expired. To run, use this command:
+
+`./MomentoEtl verify -a <AUTH-TOKEN> -c <CACHE-NAME> <DATA-PATH>`
+
+where `<DATA-PATH>` could be the same file loaded into Momento. To run on a random sample instead, run:
+
+`shuf -n N <DATA-PATH> > random_sample`
+
+to get a random sample of size N, then use this file as input to the verify subcommand.
+
+Problematic lines are logged with error level logging.
 
 # How to Run (easier - using scripts)
 
