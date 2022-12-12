@@ -52,12 +52,6 @@ public class Command : IDisposable
         if (result is JsonParseResult.OK ok)
         {
             var item = ok.Item;
-            var ttl = item.TtlRelativeToNow();
-            if (RedisItem.HasExpiredRelativeToNow(ttl))
-            {
-                logger.LogInformation($"already_expired: {line}");
-                return;
-            }
             await Verify(cacheName, item as dynamic, line);
         }
         else if (result is JsonParseResult.Error error)
@@ -77,7 +71,7 @@ public class Command : IDisposable
         {
             if (hit.ValueString.Equals(item.Value))
             {
-                logger.LogInformation($"{item.Key} (string) - OK");
+                logger.LogDebug($"{item.Key} (string) - OK");
             }
             else
             {
@@ -86,7 +80,14 @@ public class Command : IDisposable
         }
         else if (response is CacheGetResponse.Miss miss)
         {
-            logger.LogError($"{item.Key} (string) - MISS");
+            if (item.HasExpiredRelativeToNow())
+            {
+                logger.LogDebug($"{item.Key} (string) - OK - expired");
+            }
+            else
+            {
+                logger.LogError($"{item.Key} (string) - MISS");
+            }
         }
         else if (response is CacheGetResponse.Error error)
         {
@@ -105,7 +106,7 @@ public class Command : IDisposable
         {
             if (hit.StringStringDictionary().Count == item.Value.Count && !hit.StringStringDictionary().Except(item.Value).Any())
             {
-                logger.LogInformation($"{item.Key} (dictionary) - OK");
+                logger.LogDebug($"{item.Key} (dictionary) - OK");
             }
             else
             {
@@ -114,7 +115,14 @@ public class Command : IDisposable
         }
         else if (response is CacheDictionaryFetchResponse.Miss miss)
         {
-            logger.LogError($"{item.Key} (dictionary) - MISS");
+            if (item.HasExpiredRelativeToNow())
+            {
+                logger.LogDebug($"{item.Key} (dictionary) - OK - expired");
+            }
+            else
+            {
+                logger.LogError($"{item.Key} (dictionary) - MISS");
+            }
         }
         else if (response is CacheDictionaryFetchResponse.Error error)
         {
@@ -134,7 +142,7 @@ public class Command : IDisposable
         {
             if (hit.StringList().SequenceEqual(item.Value))
             {
-                logger.LogInformation($"{item.Key} (list) - OK");
+                logger.LogDebug($"{item.Key} (list) - OK");
             }
             else
             {
@@ -143,7 +151,14 @@ public class Command : IDisposable
         }
         else if (response is CacheListFetchResponse.Miss miss)
         {
-            logger.LogError($"{item.Key} (list) - MISS");
+            if (item.HasExpiredRelativeToNow())
+            {
+                logger.LogDebug($"{item.Key} (list) - OK - expired");
+            }
+            else
+            {
+                logger.LogError($"{item.Key} (list) - MISS");
+            }
         }
         else if (response is CacheListFetchResponse.Error error)
         {
@@ -162,7 +177,7 @@ public class Command : IDisposable
         {
             if (hit.StringSet().SetEquals(item.Value))
             {
-                logger.LogInformation($"{item.Key} (set) - OK");
+                logger.LogDebug($"{item.Key} (set) - OK");
             }
             else
             {
@@ -171,7 +186,14 @@ public class Command : IDisposable
         }
         else if (response is CacheSetFetchResponse.Miss miss)
         {
-            logger.LogError($"{item.Key} (set) - MISS");
+            if (item.HasExpiredRelativeToNow())
+            {
+                logger.LogDebug($"{item.Key} (set) - OK - expired");
+            }
+            else
+            {
+                logger.LogError($"{item.Key} (set) - MISS");
+            }
         }
         else if (response is CacheSetFetchResponse.Error error)
         {
