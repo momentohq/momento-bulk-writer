@@ -22,37 +22,41 @@ public class Command : IDisposable
     public async Task RunAsync(string cacheName, string filePath)
     {
         logger.LogInformation($"Extracting {filePath} and verifying in Momento");
+        var numProcessed = 0;
+        var numErrors = 0;
         using (var stream = File.OpenText(filePath))
         {
             string? line;
-            int linesProcessed = 0;
-            while ((line = stream.ReadLine()) != null)
+            while ((line = stream.ReadLine()?.Trim()) != null)
             {
-                await ProcessLine(cacheName, line);
-                linesProcessed++;
-                if (linesProcessed % 10_000 == 0)
+                if (line.Equals(""))
                 {
-                    logger.LogInformation($"Processed {linesProcessed}");
+                    continue;
+                }
+                var ok = await ProcessLine(cacheName, line);
+                if (!ok)
+                {
+                    numErrors++;
+                }
+
+                numProcessed++;
+                if (numProcessed % 10_000 == 0)
+                {
+                    logger.LogInformation($"Processed {numProcessed}");
                 }
             }
         }
-        logger.LogInformation("Finished");
+        logger.LogInformation($"Finished: {numErrors} errors in {numProcessed} items");
     }
 
 
-    private async Task ProcessLine(string cacheName, string line)
+    private async Task<bool> ProcessLine(string cacheName, string line)
     {
-        line = line.Trim();
-        if (line.Equals(""))
-        {
-            return;
-        }
-
         var result = RdbJsonReader.ParseJson(line);
         if (result is JsonParseResult.OK ok)
         {
             var item = ok.Item;
-            await Verify(cacheName, item as dynamic, line);
+            return await Verify(cacheName, item as dynamic, line);
         }
         else if (result is JsonParseResult.Error error)
         {
@@ -62,9 +66,10 @@ public class Command : IDisposable
         {
             logger.LogError($"should not reach here: {line}");
         }
+        return false;
     }
 
-    private async Task Verify(string cacheName, RedisString item, string line)
+    private async Task<bool> Verify(string cacheName, RedisString item, string line)
     {
         var response = await client.GetAsync(cacheName, item.Key);
         if (response is CacheGetResponse.Hit hit)
@@ -72,6 +77,7 @@ public class Command : IDisposable
             if (hit.ValueString.Equals(item.Value))
             {
                 logger.LogDebug($"{item.Key} (string) - OK");
+                return true;
             }
             else
             {
@@ -83,6 +89,7 @@ public class Command : IDisposable
             if (item.HasExpiredRelativeToNow())
             {
                 logger.LogDebug($"{item.Key} (string) - OK - expired");
+                return true;
             }
             else
             {
@@ -97,9 +104,10 @@ public class Command : IDisposable
         {
             logger.LogError($"unknown_response: {line}");
         }
+        return false;
     }
 
-    private async Task Verify(string cacheName, RedisHash item, string line)
+    private async Task<bool> Verify(string cacheName, RedisHash item, string line)
     {
         var response = await client.DictionaryFetchAsync(cacheName, item.Key);
         if (response is CacheDictionaryFetchResponse.Hit hit)
@@ -107,6 +115,7 @@ public class Command : IDisposable
             if (hit.StringStringDictionary().Count == item.Value.Count && !hit.StringStringDictionary().Except(item.Value).Any())
             {
                 logger.LogDebug($"{item.Key} (dictionary) - OK");
+                return true;
             }
             else
             {
@@ -118,6 +127,7 @@ public class Command : IDisposable
             if (item.HasExpiredRelativeToNow())
             {
                 logger.LogDebug($"{item.Key} (dictionary) - OK - expired");
+                return true;
             }
             else
             {
@@ -132,9 +142,10 @@ public class Command : IDisposable
         {
             logger.LogError($"unknown_response: {line}");
         }
+        return false;
     }
 
-    private async Task Verify(string cacheName, RedisList item, string line)
+    private async Task<bool> Verify(string cacheName, RedisList item, string line)
     {
         // List operations are not idempotent. Ensure the list is not there.
         var response = await client.ListFetchAsync(cacheName, item.Key);
@@ -143,6 +154,7 @@ public class Command : IDisposable
             if (hit.StringList().SequenceEqual(item.Value))
             {
                 logger.LogDebug($"{item.Key} (list) - OK");
+                return true;
             }
             else
             {
@@ -154,6 +166,7 @@ public class Command : IDisposable
             if (item.HasExpiredRelativeToNow())
             {
                 logger.LogDebug($"{item.Key} (list) - OK - expired");
+                return true;
             }
             else
             {
@@ -168,9 +181,10 @@ public class Command : IDisposable
         {
             logger.LogError($"unknown_response: {line}");
         }
+        return false;
     }
 
-    private async Task Verify(string cacheName, RedisSet item, string line)
+    private async Task<bool> Verify(string cacheName, RedisSet item, string line)
     {
         var response = await client.SetFetchAsync(cacheName, item.Key);
         if (response is CacheSetFetchResponse.Hit hit)
@@ -178,6 +192,7 @@ public class Command : IDisposable
             if (hit.StringSet().SetEquals(item.Value))
             {
                 logger.LogDebug($"{item.Key} (set) - OK");
+                return true;
             }
             else
             {
@@ -189,6 +204,7 @@ public class Command : IDisposable
             if (item.HasExpiredRelativeToNow())
             {
                 logger.LogDebug($"{item.Key} (set) - OK - expired");
+                return true;
             }
             else
             {
@@ -203,13 +219,15 @@ public class Command : IDisposable
         {
             logger.LogError($"unknown_response: {line}");
         }
+        return false;
     }
 
 #pragma warning disable CS1998
     // disable warnings for no "await"
-    private async Task Verify(string cacheName, object item, string line)
+    private async Task<bool> Verify(string cacheName, object item, string line)
     {
         logger.LogError($"unsupported_data_type: {line}");
+        return false;
     }
 #pragma warning restore CS1998
 
