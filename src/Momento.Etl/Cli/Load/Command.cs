@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Momento.Etl.Model;
 using Momento.Sdk.Incubating;
+using Momento.Sdk.Incubating.Requests;
 using Momento.Sdk.Incubating.Responses;
 using Momento.Sdk.Responses;
 
@@ -10,10 +11,10 @@ namespace Momento.Etl.Cli.Load;
 public class Command : IDisposable
 {
     private ILogger logger;
-    private SimpleCacheClient client;
+    private ISimpleCacheClient client;
     private bool createCache;
 
-    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client, bool createCache)
+    public Command(ILoggerFactory loggerFactory, ISimpleCacheClient client, bool createCache)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
@@ -114,12 +115,12 @@ public class Command : IDisposable
 
     private async Task Load(string cacheName, RedisHash item, TimeSpan? ttl, string line)
     {
-        var response = await client.DictionarySetBatchAsync(cacheName, item.Key, item.Value, true, ttl);
-        if (response is CacheDictionarySetBatchResponse.Success)
+        var response = await client.DictionarySetFieldsAsync(cacheName, item.Key, item.Value, new CollectionTtl(ttl, true));
+        if (response is CacheDictionarySetFieldsResponse.Success)
         {
             // success is a no-op. we include this branch for pattern-matching completeness
         }
-        else if (response is CacheDictionarySetBatchResponse.Error error)
+        else if (response is CacheDictionarySetFieldsResponse.Error error)
         {
             logger.LogError($"error_storing: {error.Message}; {line}");
         }
@@ -132,12 +133,12 @@ public class Command : IDisposable
     private async Task Load(string cacheName, RedisList item, TimeSpan? ttl, string line)
     {
         // List operations are not idempotent. Ensure the list is not there.
-        var deleteResponse = await client.ListDeleteAsync(cacheName, item.Key);
-        if (deleteResponse is CacheListDeleteResponse.Success)
+        var deleteResponse = await client.DeleteAsync(cacheName, item.Key);
+        if (deleteResponse is CacheDeleteResponse.Success)
         {
             // success is a no-op. we include this branch for pattern-matching completeness
         }
-        else if (deleteResponse is CacheListDeleteResponse.Error error)
+        else if (deleteResponse is CacheDeleteResponse.Error error)
         {
             logger.LogError($"error_deleting: {error.Message}; {line}");
         }
@@ -146,32 +147,29 @@ public class Command : IDisposable
             logger.LogError($"unknown_response: {line}");
         }
 
-        foreach (var listItem in item.Value)
+        var concatenateResponse = await client.ListConcatenateFrontAsync(cacheName, item.Key, item.Value, null, new CollectionTtl(ttl, true));
+        if (concatenateResponse is CacheListConcatenateFrontResponse.Success)
         {
-            var pushResponse = await client.ListPushBackAsync(cacheName, item.Key, listItem, true, ttl);
-            if (pushResponse is CacheListPushBackResponse.Success)
-            {
-                // success is a no-op. we include this branch for pattern-matching completeness
-            }
-            else if (pushResponse is CacheListPushBackResponse.Error pushError)
-            {
-                logger.LogError($"error_storing: {pushError.Message}; {line}");
-            }
-            else
-            {
-                logger.LogError($"unknown_response: {line}");
-            }
+            // success is a no-op. we include this branch for pattern-matching completeness
+        }
+        else if (concatenateResponse is CacheListConcatenateFrontResponse.Error pushError)
+        {
+            logger.LogError($"error_storing: {pushError.Message}; {line}");
+        }
+        else
+        {
+            logger.LogError($"unknown_response: {line}");
         }
     }
 
     private async Task Load(string cacheName, RedisSet item, TimeSpan? ttl, string line)
     {
-        var response = await client.SetAddBatchAsync(cacheName, item.Key, item.Value, true, ttl);
-        if (response is CacheSetAddBatchResponse.Success)
+        var response = await client.SetAddElementsAsync(cacheName, item.Key, item.Value, new CollectionTtl(ttl, true));
+        if (response is CacheSetAddElementsResponse.Success)
         {
             // success is a no-op. we include this branch for pattern-matching completeness
         }
-        else if (response is CacheSetAddBatchResponse.Error error)
+        else if (response is CacheSetAddElementsResponse.Error error)
         {
             logger.LogError($"error_storing: {error.Message}; {line}");
         }

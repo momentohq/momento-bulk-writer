@@ -11,9 +11,9 @@ namespace Momento.Etl.Cli.Verify;
 public class Command : IDisposable
 {
     private ILogger logger;
-    private SimpleCacheClient client;
+    private ISimpleCacheClient client;
 
-    public Command(ILoggerFactory loggerFactory, SimpleCacheClient client)
+    public Command(ILoggerFactory loggerFactory, ISimpleCacheClient client)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
@@ -112,7 +112,7 @@ public class Command : IDisposable
         var response = await client.DictionaryFetchAsync(cacheName, item.Key);
         if (response is CacheDictionaryFetchResponse.Hit hit)
         {
-            if (hit.StringStringDictionary().Count == item.Value.Count && !hit.StringStringDictionary().Except(item.Value).Any())
+            if (hit.ValueDictionaryStringString.Count == item.Value.Count && !hit.ValueDictionaryStringString.Except(item.Value).Any())
             {
                 logger.LogDebug($"{item.Key} (dictionary) - OK");
                 return true;
@@ -151,7 +151,7 @@ public class Command : IDisposable
         var response = await client.ListFetchAsync(cacheName, item.Key);
         if (response is CacheListFetchResponse.Hit hit)
         {
-            if (hit.StringList().SequenceEqual(item.Value))
+            if (hit.ValueListString.SequenceEqual(item.Value))
             {
                 logger.LogDebug($"{item.Key} (list) - OK");
                 return true;
@@ -189,7 +189,7 @@ public class Command : IDisposable
         var response = await client.SetFetchAsync(cacheName, item.Key);
         if (response is CacheSetFetchResponse.Hit hit)
         {
-            if (hit.StringSet().SetEquals(item.Value))
+            if (hit.ValueSetString.SetEquals(item.Value))
             {
                 logger.LogDebug($"{item.Key} (set) - OK");
                 return true;
