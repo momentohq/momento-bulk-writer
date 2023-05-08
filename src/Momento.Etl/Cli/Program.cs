@@ -4,9 +4,9 @@ using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using Momento.Etl.Utils;
+using Momento.Sdk;
 using Momento.Sdk.Auth;
 using Momento.Sdk.Config;
-using Momento.Sdk.Incubating;
 
 namespace Momento.Etl.Cli;
 
@@ -84,7 +84,7 @@ public class Program
             // we opt to use a config we more relaxed timeouts.
             var config = Configurations.Laptop.Latest(loggerFactory);
             var authProvider = new StringMomentoTokenProvider(options.AuthToken);
-            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, options.DefaultTtlTimeSpan);
+            var client = new CacheClient(config, authProvider, options.DefaultTtlTimeSpan);
 
             var command = new Load.Command(loggerFactory, client, options.CreateCache);
             await command.RunAsync(options.CacheName, options.FilePath, options.ResetAlreadyExpiredToDefaultTtl);
@@ -106,7 +106,7 @@ public class Program
             // we opt to use a config we more relaxed timeouts.
             var config = Configurations.Laptop.Latest(loggerFactory);
             var authProvider = new StringMomentoTokenProvider(options.AuthToken);
-            var client = SimpleCacheClientFactory.CreateClient(config, authProvider, TimeSpan.FromMinutes(1));
+            var client = new CacheClient(config, authProvider, TimeSpan.FromMinutes(1));
 
             var command = new Verify.Command(loggerFactory, client);
             await command.RunAsync(options.CacheName, options.FilePath);

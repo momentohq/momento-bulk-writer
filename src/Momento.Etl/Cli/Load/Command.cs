@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Momento.Etl.Model;
-using Momento.Sdk.Incubating;
-using Momento.Sdk.Incubating.Requests;
-using Momento.Sdk.Incubating.Responses;
+using Momento.Sdk;
+using Momento.Sdk.Requests;
 using Momento.Sdk.Responses;
 
 
@@ -11,10 +10,10 @@ namespace Momento.Etl.Cli.Load;
 public class Command : IDisposable
 {
     private ILogger logger;
-    private ISimpleCacheClient client;
+    private ICacheClient client;
     private bool createCache;
 
-    public Command(ILoggerFactory loggerFactory, ISimpleCacheClient client, bool createCache)
+    public Command(ILoggerFactory loggerFactory, ICacheClient client, bool createCache)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
