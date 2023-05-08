@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Momento.Etl.Model;
 using Momento.Sdk;
 using Momento.Sdk.Internal.ExtensionMethods;

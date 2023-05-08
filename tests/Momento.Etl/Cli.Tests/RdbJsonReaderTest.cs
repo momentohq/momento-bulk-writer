@@ -1,4 +1,4 @@
-using Momento.Etl.Cli;
+﻿using Momento.Etl.Cli;
 using Momento.Etl.Model;
 using Momento.Etl.Validation;
 using Xunit;

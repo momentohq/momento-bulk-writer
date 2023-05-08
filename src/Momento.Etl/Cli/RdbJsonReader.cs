@@ -1,4 +1,4 @@
-using Momento.Etl.Model;
+﻿using Momento.Etl.Model;
 using Momento.Etl.Validation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

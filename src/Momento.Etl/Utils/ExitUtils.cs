@@ -1,4 +1,4 @@
-public static class ExitUtils
+﻿public static class ExitUtils
 {
     /// <summary>
     /// Exits the program after a delay. A delay is necessary to allow the logger to flush.

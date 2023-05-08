@@ -9,10 +9,19 @@ clean:
 build:
 	@dotnet build
 
+.PHONY: format
+## Format code
+format:
+	@dotnet format
+
 .PHONY: test
 ## Run unit tests
 test:
 	@dotnet test
+
+.PHONY: precommit
+## Run clean-build, format, and test as a step before committing.
+precommit: build format test
 
 .PHONY: publish
 ##  Build standalone executables

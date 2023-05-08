@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Momento.Etl.Utils;
 using Xunit;
 
