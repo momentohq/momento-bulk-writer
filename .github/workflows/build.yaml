@@ -28,6 +28,9 @@ jobs:
         run: dotnet build
         shell: bash
 
+      - name: Format
+        run: dotnet format --verify-no-changes
+
       - name: Test
         run: dotnet test
         shell: bash

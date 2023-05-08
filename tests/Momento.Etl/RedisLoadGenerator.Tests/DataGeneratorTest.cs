@@ -1,4 +1,4 @@
-using Momento.Etl.RedisLoadGenerator;
+﻿using Momento.Etl.RedisLoadGenerator;
 using Xunit;
 
 namespace Momento.Etl.RedisLoadGenerator.Tests;

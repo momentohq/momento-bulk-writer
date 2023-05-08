@@ -1,4 +1,4 @@
-using CommandLine;
+﻿using CommandLine;
 using Momento.Etl.Utils;
 
 namespace Momento.Etl.Cli.Verify;

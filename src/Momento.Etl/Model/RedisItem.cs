@@ -1,4 +1,4 @@
-namespace Momento.Etl.Model;
+﻿namespace Momento.Etl.Model;
 
 public abstract record RedisItem
 {

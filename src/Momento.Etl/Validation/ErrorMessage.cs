@@ -1,4 +1,4 @@
-namespace Momento.Etl.Validation;
+﻿namespace Momento.Etl.Validation;
 
 public static class ErrorMessage
 {
