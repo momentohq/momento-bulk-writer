@@ -1,11 +1,15 @@
-name: On pull request
+name: Build
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
-  build_csharp:
+  build:
     runs-on: ubuntu-latest
 
     steps:
