@@ -68,13 +68,13 @@ i. The validate tool identifies potential incompatibilities with Momento. When r
 
 For example:
 
-`./MomentoEtl validate --maxTtl 1 --maxPayloadSize 1 --filterLongTtl --filterAlreadyExpired --filterMissingTtl snapshot.jsonl valid.jsonl error.jsonl`
+`./MomentoEtl validate --maxTtl 1 --maxPayloadSize 1 --filterLongTtl --filterAlreadyExpired --filterMissingTtl snapshot.jsonl valid.jsonl error`
 
-Which reads from `snapshot.jsonl`, writes data that passes the filters to `valid.jsonl` and those that do not to `error.jsonl`. `error.jsonl` contains two columns separated by a tab. The first column contains an error message. This allows you to easily grep error types for analysis. Specifically an end user may wish to know which items have a longer TTL than allowed, which items are too big, and which data types are not supported.
+Which reads from `snapshot.jsonl`, writes data that passes the filters to `valid.jsonl` and those that do not to `error`. `error` contains two columns separated by a tab. The first column contains an error message. This allows you to easily grep error types for analysis. Specifically an end user may wish to know which items have a longer TTL than allowed, which items are too big, and which data types are not supported.
 
 ii. After doing an initial analysis, run the tool with a relaxed set of filters. Because a TTL that is too long can be clipped, a missing one can have one applied, etc. we can still store these items. Because an item that is too large is not recoverable and neither is an unsupported data type, we still filter those:
 
-`./MomentoEtl validate --maxItemSize 1 snapshot.jsonl valid.jsonl error.jsonl`
+`./MomentoEtl validate --maxItemSize 1 snapshot.jsonl valid.jsonl error`
 
 ## Load the data into Momento
 

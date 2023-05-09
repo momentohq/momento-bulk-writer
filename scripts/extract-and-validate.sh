@@ -127,7 +127,7 @@ $momento_etl_path validate \
     --maxTtl $max_ttl --filterLongTtl \
     --filterAlreadyExpired \
     --filterMissingTtl \
-    $joined_file $stage3_strict_path/valid $stage3_strict_path/error \
+    $joined_file $stage3_strict_path/valid.jsonl $stage3_strict_path/error \
     2>&1 | tee $stage3_strict_path/log
 
 if [ $? -ne 0 ]
@@ -139,7 +139,7 @@ fi
 # LAX
 $momento_etl_path validate \
     --maxItemSize $max_item_size \
-    $joined_file $stage3_lax_path/valid $stage3_lax_path/error \
+    $joined_file $stage3_lax_path/valid.jsonl $stage3_lax_path/error \
     2>&1 | tee $stage3_lax_path/log
 
 if [ $? -ne 0 ]
