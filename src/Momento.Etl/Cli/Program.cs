@@ -109,7 +109,7 @@ public class Program
             var client = new CacheClient(config, authProvider, TimeSpan.FromMinutes(1));
 
             var command = new Verify.Command(loggerFactory, client);
-            await command.RunAsync(options.CacheName, options.FilePath);
+            await command.RunAsync(options.CacheName, options.FilePath, options.MaxNumberOfConcurrentRequests);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }

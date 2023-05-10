@@ -12,6 +12,9 @@ public class Options
     [Option('c', "cacheName", Required = true, HelpText = "Momento cache to store data in.")]
     public string CacheName { get; set; } = default!;
 
+    [Option('m', "maxNumberOfConcurrentRequests", Required = false, HelpText = "Max number of concurrent requests. Defaults to 1.")]
+    public int MaxNumberOfConcurrentRequests { get; set; } = 1;
+
     [Value(0, Required = false, HelpText = "File to load into Momento")]
     public string FilePath { get; set; } = default!;
 

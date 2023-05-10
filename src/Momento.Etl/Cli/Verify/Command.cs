@@ -12,17 +12,39 @@ public class Command : IDisposable
     private ILogger logger;
     private ICacheClient client;
 
+    private static int BUFFER_SIZE = 1024;
+
     public Command(ILoggerFactory loggerFactory, ICacheClient client)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
     }
 
-    public async Task RunAsync(string cacheName, string filePath)
+    public async Task RunAsync(string cacheName, string filePath, int maxNumberOfConcurrentRequests = 1)
     {
-        logger.LogInformation($"Extracting {filePath} and verifying in Momento");
+        logger.LogInformation($"Extracting {filePath} and verifying in Momento with a max concurrency of {maxNumberOfConcurrentRequests}");
         var numProcessed = 0;
         var numErrors = 0;
+
+        // Read in the file in BUFFER_SIZE line batches and process them in parallel.
+        BUFFER_SIZE = Math.Max(BUFFER_SIZE, maxNumberOfConcurrentRequests);
+        var workBuffer = new List<string>(BUFFER_SIZE);
+        var processWorkBuffer = async () =>
+        {
+            await Parallel.ForEachAsync(
+                workBuffer,
+                new ParallelOptions { MaxDegreeOfParallelism = maxNumberOfConcurrentRequests },
+                async (line, ct) =>
+                {
+                    var ok = await ProcessLine(cacheName, line);
+                    if (!ok)
+                    {
+                        Interlocked.Increment(ref numErrors);
+                    }
+                });
+            workBuffer.Clear();
+        };
+
         using (var stream = File.OpenText(filePath))
         {
             string? line;
@@ -32,10 +54,10 @@ public class Command : IDisposable
                 {
                     continue;
                 }
-                var ok = await ProcessLine(cacheName, line);
-                if (!ok)
+                workBuffer.Add(line);
+                if (workBuffer.Count == BUFFER_SIZE)
                 {
-                    numErrors++;
+                    await processWorkBuffer();
                 }
 
                 numProcessed++;
@@ -43,6 +65,10 @@ public class Command : IDisposable
                 {
                     logger.LogInformation($"Processed {numProcessed}");
                 }
+            }
+            if (workBuffer.Count > 0)
+            {
+                await processWorkBuffer();
             }
         }
         logger.LogInformation($"Finished: {numErrors} errors in {numProcessed} items");
