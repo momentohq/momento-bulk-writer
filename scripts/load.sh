@@ -16,10 +16,13 @@ cache_name=$3
 # Default TTL in days
 default_ttl=$4
 
-# Path to MomentoEtl binary
-momento_etl_path=${5:-linux-x64/MomentoEtl}
+# Number of concurrent requests to make
+num_concurrent_requests=${5:-10}
 
-log_dir=${6:-logs}
+# Path to MomentoEtl binary
+momento_etl_path=${6:-linux-x64/MomentoEtl}
+
+log_dir=${7:-logs}
 
 
 function dir_exists_or_panic() {
@@ -58,9 +61,10 @@ dir_exists_or_panic $log_dir
 log_path="$log_dir/$(basename $data_path).log"
 
 $momento_etl_path load \
-    -a $auth_token \
+  -a $auth_token \
 	-c $cache_name \
 	--defaultTtl $default_ttl \
+  -n $num_concurrent_requests \
 	$data_path 2>&1 > $log_path
 
 if [ $? -ne 0 ]

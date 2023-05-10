@@ -12,17 +12,23 @@ public class Command : IDisposable
     private ILogger logger;
     private ICacheClient client;
 
+    private static readonly int BUFFER_SIZE = 1024;
+
     public Command(ILoggerFactory loggerFactory, ICacheClient client)
     {
         logger = loggerFactory.CreateLogger<Command>();
         this.client = client;
     }
 
-    public async Task RunAsync(string cacheName, string filePath)
+    public async Task RunAsync(string cacheName, string filePath, int numberOfConcurrentRequests = 1)
     {
-        logger.LogInformation($"Extracting {filePath} and verifying in Momento");
+        logger.LogInformation($"Extracting {filePath} and verifying in Momento with a max concurrency of {numberOfConcurrentRequests}");
         var numProcessed = 0;
         var numErrors = 0;
+
+        var bufferSize = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
+        var workBuffer = new List<string>(bufferSize);
+
         using (var stream = File.OpenText(filePath))
         {
             string? line;
@@ -32,10 +38,10 @@ public class Command : IDisposable
                 {
                     continue;
                 }
-                var ok = await ProcessLine(cacheName, line);
-                if (!ok)
+                workBuffer.Add(line);
+                if (workBuffer.Count == bufferSize)
                 {
-                    numErrors++;
+                    numErrors += await ProcessWorkBuffer(cacheName, workBuffer, numberOfConcurrentRequests);
                 }
 
                 numProcessed++;
@@ -44,10 +50,31 @@ public class Command : IDisposable
                     logger.LogInformation($"Processed {numProcessed}");
                 }
             }
+            if (workBuffer.Count > 0)
+            {
+                numErrors += await ProcessWorkBuffer(cacheName, workBuffer, numberOfConcurrentRequests);
+            }
         }
         logger.LogInformation($"Finished: {numErrors} errors in {numProcessed} items");
     }
 
+    private async Task<int> ProcessWorkBuffer(string cacheName, List<string> workBuffer, int numberOfConcurrentRequests)
+    {
+        var numErrors = 0;
+        await Parallel.ForEachAsync(
+            workBuffer,
+            new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
+            async (line, ct) =>
+            {
+                var ok = await ProcessLine(cacheName, line);
+                if (!ok)
+                {
+                    Interlocked.Increment(ref numErrors);
+                }
+            });
+        workBuffer.Clear();
+        return numErrors;
+    }
 
     private async Task<bool> ProcessLine(string cacheName, string line)
     {

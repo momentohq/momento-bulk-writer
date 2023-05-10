@@ -21,6 +21,9 @@ public class Options
     [Option('r', "resetAlreadyExpiredToDefaultTtl", Required = false, HelpText = "(For testing) Reset an already expired item to default TTL. Defaults to false.")]
     public bool ResetAlreadyExpiredToDefaultTtl { get; set; } = false;
 
+    [Option('n', "numberOfConcurrentRequests", Required = false, HelpText = "Number of concurrent requests. Defaults to 1.")]
+    public int NumberOfConcurrentRequests { get; set; } = 1;
+
     [Value(0, Required = false, HelpText = "File to load into Momento")]
     public string FilePath { get; set; } = default!;
 

@@ -125,13 +125,15 @@ The script `extract-and-validate.sh` wraps the extract and validate steps above.
 
 `./extract-and-validate.sh path-to-data-dir 1 1`
 
+This extracts the RDB files at `path-to-data-dir/redis` and writes the output to `path-to-data-dir/stage1`. The last two arguments are the max item size and max TTL, respectively. These are used to filter the data. The script writes the output to `path-to-data-dir/stage3-lax/valid.jsonl` and `path-to-data-dir/stage3-lax/error`.
+
 ## Load
 
-Load the data into Momento. Use `load-one.sh` to load a single file serially. Use `load-many.sh` to split the file into chunks and load in parallel. Example:
+Load the data into Momento. Use `load.sh` to do this. Example:
 
-`./load-one.sh path-to-validated-file auth-token cache-name 1`
+`./load.sh path-to-validated-file auth-token cache-name 1`
 
-where `path-to-validated-file` would be produced by `extract-and-validated.sh`, eg in `data/stage3-lax/valid`.
+where `path-to-validated-file` would be produced by `extract-and-validated.sh`, eg in `data/stage3-lax/valid`. This command loads the data into the cache `cache-name` using the auth token `auth-token`. The last argument is the default TTL to use for items that do not have a TTL. By default the script writes logs to `./logs/`, and defaults to a max of 10 concurrent requests.
 
 # Run from an EC2 instance
 
