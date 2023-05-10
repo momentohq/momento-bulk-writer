@@ -26,24 +26,8 @@ public class Command : IDisposable
         var numProcessed = 0;
         var numErrors = 0;
 
-        // Read in the file in BUFFER_SIZE line batches and process them in parallel.
         BUFFER_SIZE = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
         var workBuffer = new List<string>(BUFFER_SIZE);
-        var processWorkBuffer = async () =>
-        {
-            await Parallel.ForEachAsync(
-                workBuffer,
-                new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
-                async (line, ct) =>
-                {
-                    var ok = await ProcessLine(cacheName, line);
-                    if (!ok)
-                    {
-                        Interlocked.Increment(ref numErrors);
-                    }
-                });
-            workBuffer.Clear();
-        };
 
         using (var stream = File.OpenText(filePath))
         {
@@ -57,7 +41,7 @@ public class Command : IDisposable
                 workBuffer.Add(line);
                 if (workBuffer.Count == BUFFER_SIZE)
                 {
-                    await processWorkBuffer();
+                    numErrors += await ProcessWorkBuffer(cacheName, workBuffer, numberOfConcurrentRequests);
                 }
 
                 numProcessed++;
@@ -68,12 +52,29 @@ public class Command : IDisposable
             }
             if (workBuffer.Count > 0)
             {
-                await processWorkBuffer();
+                numErrors += await ProcessWorkBuffer(cacheName, workBuffer, numberOfConcurrentRequests);
             }
         }
         logger.LogInformation($"Finished: {numErrors} errors in {numProcessed} items");
     }
 
+    private async Task<int> ProcessWorkBuffer(string cacheName, List<string> workBuffer, int numberOfConcurrentRequests)
+    {
+        var numErrors = 0;
+        await Parallel.ForEachAsync(
+            workBuffer,
+            new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
+            async (line, ct) =>
+            {
+                var ok = await ProcessLine(cacheName, line);
+                if (!ok)
+                {
+                    Interlocked.Increment(ref numErrors);
+                }
+            });
+        workBuffer.Clear();
+        return numErrors;
+    }
 
     private async Task<bool> ProcessLine(string cacheName, string line)
     {

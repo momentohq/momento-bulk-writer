@@ -43,17 +43,8 @@ public class Command : IDisposable
         }
         logger.LogInformation($"Extracting {filePath} and loading into Momento with a max concurrency of {numberOfConcurrentRequests}");
 
-        // Read in the file in BUFFER_SIZE line batches and process them in parallel.
         BUFFER_SIZE = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
         var workBuffer = new List<string>(BUFFER_SIZE);
-        var processWorkBuffer = async () =>
-        {
-            await Parallel.ForEachAsync(
-                workBuffer,
-                new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
-                async (line, ct) => await ProcessLine(cacheName, line, resetAlreadyExpiredToDefaultTtl));
-            workBuffer.Clear();
-        };
 
         using (var stream = File.OpenText(filePath))
         {
@@ -64,7 +55,7 @@ public class Command : IDisposable
                 workBuffer.Add(line);
                 if (workBuffer.Count == BUFFER_SIZE)
                 {
-                    await processWorkBuffer();
+                    await ProcessWorkBuffer(cacheName, workBuffer, resetAlreadyExpiredToDefaultTtl, numberOfConcurrentRequests);
                 }
 
                 linesProcessed++;
@@ -75,12 +66,20 @@ public class Command : IDisposable
             }
             if (workBuffer.Count > 0)
             {
-                await processWorkBuffer();
+                await ProcessWorkBuffer(cacheName, workBuffer, resetAlreadyExpiredToDefaultTtl, numberOfConcurrentRequests);
             }
         }
         logger.LogInformation("Finished");
     }
 
+    private async Task ProcessWorkBuffer(string cacheName, List<string> workBuffer, bool resetAlreadyExpiredToDefaultTtl, int numberOfConcurrentRequests)
+    {
+        await Parallel.ForEachAsync(
+            workBuffer,
+            new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
+            async (line, ct) => await ProcessLine(cacheName, line, resetAlreadyExpiredToDefaultTtl));
+        workBuffer.Clear();
+    }
 
     private async Task ProcessLine(string cacheName, string line, bool resetAlreadyExpiredToDefaultTtl = false)
     {
