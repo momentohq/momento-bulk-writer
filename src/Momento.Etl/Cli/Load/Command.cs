@@ -25,7 +25,7 @@ public class Command : IDisposable
         this.createCache = createCache;
     }
 
-    public async Task RunAsync(string cacheName, string filePath, bool resetAlreadyExpiredToDefaultTtl = false, int maxNumberOfConcurrentRequests = 1)
+    public async Task RunAsync(string cacheName, string filePath, bool resetAlreadyExpiredToDefaultTtl = false, int numberOfConcurrentRequests = 1)
     {
         if (createCache)
         {
@@ -41,16 +41,16 @@ public class Command : IDisposable
         {
             logger.LogInformation($"Resetting already expired items to use the default TTL");
         }
-        logger.LogInformation($"Extracting {filePath} and loading into Momento with a max concurrency of {maxNumberOfConcurrentRequests}");
+        logger.LogInformation($"Extracting {filePath} and loading into Momento with a max concurrency of {numberOfConcurrentRequests}");
 
         // Read in the file in BUFFER_SIZE line batches and process them in parallel.
-        BUFFER_SIZE = Math.Max(BUFFER_SIZE, maxNumberOfConcurrentRequests);
+        BUFFER_SIZE = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
         var workBuffer = new List<string>(BUFFER_SIZE);
         var processWorkBuffer = async () =>
         {
             await Parallel.ForEachAsync(
                 workBuffer,
-                new ParallelOptions { MaxDegreeOfParallelism = maxNumberOfConcurrentRequests },
+                new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
                 async (line, ct) => await ProcessLine(cacheName, line, resetAlreadyExpiredToDefaultTtl));
             workBuffer.Clear();
         };

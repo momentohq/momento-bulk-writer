@@ -20,20 +20,20 @@ public class Command : IDisposable
         this.client = client;
     }
 
-    public async Task RunAsync(string cacheName, string filePath, int maxNumberOfConcurrentRequests = 1)
+    public async Task RunAsync(string cacheName, string filePath, int numberOfConcurrentRequests = 1)
     {
-        logger.LogInformation($"Extracting {filePath} and verifying in Momento with a max concurrency of {maxNumberOfConcurrentRequests}");
+        logger.LogInformation($"Extracting {filePath} and verifying in Momento with a max concurrency of {numberOfConcurrentRequests}");
         var numProcessed = 0;
         var numErrors = 0;
 
         // Read in the file in BUFFER_SIZE line batches and process them in parallel.
-        BUFFER_SIZE = Math.Max(BUFFER_SIZE, maxNumberOfConcurrentRequests);
+        BUFFER_SIZE = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
         var workBuffer = new List<string>(BUFFER_SIZE);
         var processWorkBuffer = async () =>
         {
             await Parallel.ForEachAsync(
                 workBuffer,
-                new ParallelOptions { MaxDegreeOfParallelism = maxNumberOfConcurrentRequests },
+                new ParallelOptions { MaxDegreeOfParallelism = numberOfConcurrentRequests },
                 async (line, ct) =>
                 {
                     var ok = await ProcessLine(cacheName, line);

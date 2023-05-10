@@ -87,7 +87,7 @@ public class Program
             var client = new CacheClient(config, authProvider, options.DefaultTtlTimeSpan);
 
             var command = new Load.Command(loggerFactory, client, options.CreateCache);
-            await command.RunAsync(options.CacheName, options.FilePath, options.ResetAlreadyExpiredToDefaultTtl, options.MaxNumberOfConcurrentRequests);
+            await command.RunAsync(options.CacheName, options.FilePath, options.ResetAlreadyExpiredToDefaultTtl, options.NumberOfConcurrentRequests);
         });
         result = await result.WithParsedAsync<Verify.Options>(async options =>
         {
@@ -109,7 +109,7 @@ public class Program
             var client = new CacheClient(config, authProvider, TimeSpan.FromMinutes(1));
 
             var command = new Verify.Command(loggerFactory, client);
-            await command.RunAsync(options.CacheName, options.FilePath, options.MaxNumberOfConcurrentRequests);
+            await command.RunAsync(options.CacheName, options.FilePath, options.NumberOfConcurrentRequests);
         });
         result.WithNotParsed(errors => DisplayHelp(result, errors));
     }
