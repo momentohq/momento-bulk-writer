@@ -13,6 +13,11 @@ public class Command : IDisposable
     private ICacheClient client;
     private bool createCache;
 
+    /// <summary>
+    /// The number of items to read from the file before processing them.
+    /// </summary>
+    private static int BUFFER_SIZE = 1024;
+
     public Command(ILoggerFactory loggerFactory, ICacheClient client, bool createCache)
     {
         logger = loggerFactory.CreateLogger<Command>();
@@ -20,7 +25,7 @@ public class Command : IDisposable
         this.createCache = createCache;
     }
 
-    public async Task RunAsync(string cacheName, string filePath, bool resetAlreadyExpiredToDefaultTtl = false)
+    public async Task RunAsync(string cacheName, string filePath, bool resetAlreadyExpiredToDefaultTtl = false, int maxNumberOfConcurrentRequests = 1)
     {
         if (createCache)
         {
@@ -36,19 +41,41 @@ public class Command : IDisposable
         {
             logger.LogInformation($"Resetting already expired items to use the default TTL");
         }
-        logger.LogInformation($"Extracting {filePath} and loading into Momento");
+        logger.LogInformation($"Extracting {filePath} and loading into Momento with a max concurrency of {maxNumberOfConcurrentRequests}");
+
+        // Read in the file in BUFFER_SIZE line batches and process them in parallel.
+        BUFFER_SIZE = Math.Max(BUFFER_SIZE, maxNumberOfConcurrentRequests);
+        var workBuffer = new List<string>(BUFFER_SIZE);
+        var processWorkBuffer = async () =>
+        {
+            await Parallel.ForEachAsync(
+                workBuffer,
+                new ParallelOptions { MaxDegreeOfParallelism = maxNumberOfConcurrentRequests },
+                async (line, ct) => await ProcessLine(cacheName, line, resetAlreadyExpiredToDefaultTtl));
+            workBuffer.Clear();
+        };
+
         using (var stream = File.OpenText(filePath))
         {
             string? line;
             int linesProcessed = 0;
             while ((line = stream.ReadLine()) != null)
             {
-                await ProcessLine(cacheName, line, resetAlreadyExpiredToDefaultTtl);
+                workBuffer.Add(line);
+                if (workBuffer.Count == BUFFER_SIZE)
+                {
+                    await processWorkBuffer();
+                }
+
                 linesProcessed++;
                 if (linesProcessed % 10_000 == 0)
                 {
                     logger.LogInformation($"Processed {linesProcessed}");
                 }
+            }
+            if (workBuffer.Count > 0)
+            {
+                await processWorkBuffer();
             }
         }
         logger.LogInformation("Finished");
