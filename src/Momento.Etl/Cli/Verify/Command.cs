@@ -12,7 +12,7 @@ public class Command : IDisposable
     private ILogger logger;
     private ICacheClient client;
 
-    private static int BUFFER_SIZE = 1024;
+    private static readonly int BUFFER_SIZE = 1024;
 
     public Command(ILoggerFactory loggerFactory, ICacheClient client)
     {
@@ -26,8 +26,8 @@ public class Command : IDisposable
         var numProcessed = 0;
         var numErrors = 0;
 
-        BUFFER_SIZE = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
-        var workBuffer = new List<string>(BUFFER_SIZE);
+        var bufferSize = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
+        var workBuffer = new List<string>(bufferSize);
 
         using (var stream = File.OpenText(filePath))
         {
@@ -39,7 +39,7 @@ public class Command : IDisposable
                     continue;
                 }
                 workBuffer.Add(line);
-                if (workBuffer.Count == BUFFER_SIZE)
+                if (workBuffer.Count == bufferSize)
                 {
                     numErrors += await ProcessWorkBuffer(cacheName, workBuffer, numberOfConcurrentRequests);
                 }

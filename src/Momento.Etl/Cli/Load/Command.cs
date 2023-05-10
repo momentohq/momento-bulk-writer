@@ -16,7 +16,7 @@ public class Command : IDisposable
     /// <summary>
     /// The number of items to read from the file before processing them.
     /// </summary>
-    private static int BUFFER_SIZE = 1024;
+    private static readonly int BUFFER_SIZE = 1024;
 
     public Command(ILoggerFactory loggerFactory, ICacheClient client, bool createCache)
     {
@@ -43,7 +43,7 @@ public class Command : IDisposable
         }
         logger.LogInformation($"Extracting {filePath} and loading into Momento with a max concurrency of {numberOfConcurrentRequests}");
 
-        BUFFER_SIZE = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
+        var bufferSize = Math.Max(BUFFER_SIZE, numberOfConcurrentRequests);
         var workBuffer = new List<string>(BUFFER_SIZE);
 
         using (var stream = File.OpenText(filePath))
@@ -53,7 +53,7 @@ public class Command : IDisposable
             while ((line = stream.ReadLine()) != null)
             {
                 workBuffer.Add(line);
-                if (workBuffer.Count == BUFFER_SIZE)
+                if (workBuffer.Count == bufferSize)
                 {
                     await ProcessWorkBuffer(cacheName, workBuffer, resetAlreadyExpiredToDefaultTtl, numberOfConcurrentRequests);
                 }
