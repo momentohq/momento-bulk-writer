@@ -2,33 +2,68 @@
 
 # Load a single file into Momento
 
-set -x
+#set -x
 
-# Path to validated file
+function usage_exit() {
+    echo "Usage: $0 -a token -c cache [-t ttl] [-n N] [-b path] [-l path] [-r] data_path"
+    echo "  -a token    Momento auth token"
+    echo "  -c cache    Momento cache name"
+    echo "  -t ttl      default ttl for Momento cache, in days (defaults 1)"
+    echo "  -n N        number of concurrent requests to make to Momento (defaults to 4)"
+    echo "  -b path     path to MomentoEtl binary (defaults to linux-x64/MomentoEtl))"
+    echo "  -l path     path to write the log to (defaults to ./load.log)"
+    echo "  -r          reset expired item ttl to default (defaults to false)"
+    echo "  <data_path> path to data file to load"
+    exit 1
+}
+
+default_ttl=1
+num_concurrent_requests=4
+momento_etl_path="linux-x64/MomentoEtl"
+log_path="load.log"
+reset_expired_items=0
+
+while getopts "ha:c:t:n:b:l:r" o; do
+    case "$o" in
+        h)
+            usage_exit
+            ;;
+        a)
+            auth_token=${OPTARG}
+            ;;
+        c)
+            cache_name=${OPTARG}
+            ;;
+        t)
+            default_ttl=${OPTARG}
+            ;;
+        n)
+            num_concurrent_requests=${OPTARG}
+            ;;
+        b)
+            momento_etl_path=${OPTARG}
+            ;;
+        l)
+            log_path=${OPTARG}
+            ;;
+        r)
+            reset_expired_items=1
+            ;;
+        *)
+            usage_exit
+            ;;
+    esac
+done
+shift $(($OPTIND-1))
+
 data_path=$1
 
-# Momento auth token
-auth_token=$2
-
-# Cache name to load data to
-cache_name=$3
-
-# Default TTL in days
-default_ttl=$4
-
-# Number of concurrent requests to make
-num_concurrent_requests=${5:-10}
-
-# Path to MomentoEtl binary
-momento_etl_path=${6:-linux-x64/MomentoEtl}
-
-log_dir=${7:-logs}
-
-
-function dir_exists_or_panic() {
-    if [ ! -d "$1" ]; then
-        echo "directory $1 does not exist but should; bailing."
-        exit 1
+function verify_set()
+{
+    if [ "$1" = "" ]
+    then
+        echo "Need to set cl arg: $2 not set"
+        usage_exit
     fi
 }
 
@@ -39,35 +74,40 @@ function file_exists_or_panic() {
     fi
 }
 
-function is_set_or_panic() {
-    if [ "$1" = "" ]
-    then
-        echo "Need to set config in file: $2 not set"
-        exit 1
-    fi
-}
-
+verify_set "$auth_token" "auth_token"
+verify_set "$cache_name" "cache_name"
+verify_set "$data_path" "data_path"
 file_exists_or_panic $data_path
 file_exists_or_panic $momento_etl_path
-is_set_or_panic $auth_token "auth_token"
-is_set_or_panic $cache_name "cache_name"
-is_set_or_panic $default_ttl "default_ttl"
-if [ "$log_dir" = "logs" ]
-then
-    mkdir -p $log_dir
-fi
-dir_exists_or_panic $log_dir
 
-log_path="$log_dir/$(basename $data_path).log"
+echo "=== LOADING WITH THE FOLLOWING SETTINGS ==="
+echo "auth_token = **** [censored]"
+echo "cache_name = $cache_name"
+echo "default_ttl = $default_ttl"
+echo "num_concurrent_requests = $num_concurrent_requests"
+echo "momento_etl_path = $momento_etl_path"
+echo "log_path = $log_path"
+echo "reset_expired_items = $reset_expired_items"
+echo "data_path = $data_path"
+
+if [ $reset_expired_items -eq 1 ]
+then
+    reset_expired_items="-r"
+else
+    reset_expired_items=""
+fi
 
 $momento_etl_path load \
   -a $auth_token \
 	-c $cache_name \
 	--defaultTtl $default_ttl \
   -n $num_concurrent_requests \
+  $reset_expired_items \
 	$data_path 2>&1 > $log_path
 
 if [ $? -ne 0 ]
 then
     echo "Error loading: $?"
 fi
+
+echo "Done loading"
