@@ -2,10 +2,9 @@
 #set -x
 
 function usage_exit() {
-    echo "Usage: $0 [-s size] [-t ttl] [-b path] <data_path>";
+    echo "Usage: $0 [-s size] [-t ttl] <data_path>";
     echo "  -s size     max item size, in MiB (default 1)";
     echo "  -t ttl      max ttl, in days (default 1)";
-    echo "  -b path     path to momento etl binary (default linux-x64/MomentoEtl)";
     echo "  <data_path> path to data directory (where redis/ is expected and stage1/ will be created)";
     exit 1;
 }
@@ -13,9 +12,9 @@ function usage_exit() {
 # Parse CLI args
 max_item_size=1
 max_ttl=1
-momento_etl_path="linux-x64/MomentoEtl"
+momento_etl_path="bin/MomentoEtl"
 
-while getopts "hs:t:b:" o; do
+while getopts "hs:t:" o; do
     case "$o" in
         h)
             usage_exit
@@ -25,9 +24,6 @@ while getopts "hs:t:b:" o; do
             ;;
         t)
             max_ttl=${OPTARG}
-            ;;
-        b)
-            momento_etl_path=${OPTARG}
             ;;
         *)
             usage_exit

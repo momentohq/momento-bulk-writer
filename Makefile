@@ -26,20 +26,14 @@ precommit: build format test
 .PHONY: publish
 ##  Build standalone executables
 publish:
-	@dotnet publish src/Momento.Etl/Cli -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained false
-	@dotnet publish src/Momento.Etl/Cli -c Release -r osx-x64 -p:PublishSingleFile=true --self-contained false
-	@dotnet publish src/Momento.Etl/Cli -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false
+	@dotnet publish src/Momento.Etl/Cli -c Release -r linux-x64 -p:PublishSingleFile=true --self-contained
+	@dotnet publish src/Momento.Etl/Cli -c Release -r osx-x64 -p:PublishSingleFile=true --self-contained
+	@dotnet publish src/Momento.Etl/Cli -c Release -r win-x64 -p:PublishSingleFile=true --self-contained
 
 .PHONY: dist
 ## Package up executables and scripts for deployment
 dist: clean publish
-	@mkdir -p dist/momento-etl/linux-x64 dist/momento-etl/osx-x64 dist/momento-etl/win-x64
-	@cp -r src/Momento.Etl/Cli/bin/Release/net6.0/linux-x64/publish/* dist/momento-etl/linux-x64
-	@cp -r src/Momento.Etl/Cli/bin/Release/net6.0/osx-x64/publish/* dist/momento-etl/osx-x64
-	@cp -r src/Momento.Etl/Cli/bin/Release/net6.0/win-x64/publish/* dist/momento-etl/win-x64
-	@cp scripts/extract-and-validate.sh dist/momento-etl
-	@cp scripts/load.sh dist/momento-etl
-	@cd dist && tar czvf momento-etl.tgz momento-etl/*
+	@./scripts/dist.sh
 
 # See <https://gist.github.com/klmr/575726c7e05d8780505a> for explanation.
 .PHONY: help
