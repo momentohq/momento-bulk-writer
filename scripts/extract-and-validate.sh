@@ -113,6 +113,7 @@ do
     docker run \
         -w /app/redis-cli/bin \
         -v "$mountpoint:/data" \
+        --platform linux/amd64 \
         redisrdbcli/redis-rdb-cli:latest \
         rct -f jsonl -s /data/redis/$rdb_filename -o /data/stage1/$jsonl_filename
     
