@@ -13,7 +13,7 @@ public class Options
     public string CacheName { get; set; } = default!;
 
     [Option('n', "numberOfConcurrentRequests", Required = false, HelpText = "Number of concurrent requests. Defaults to 1.")]
-    public int NumberOfConcurrentRequests { get; set; } = 1;
+    public int NumberOfConcurrentRequests { get; set; } = 4;
 
     [Value(0, Required = false, HelpText = "File to load into Momento")]
     public string FilePath { get; set; } = default!;

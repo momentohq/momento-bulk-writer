@@ -1,19 +1,49 @@
 #!/bin/bash
-set -x
+#set -x
+
+function usage_exit() {
+    echo "Usage: $0 [-s size] [-t ttl] [-b path] <data_path>";
+    echo "  -s size     max item size, in MiB (default 1)";
+    echo "  -t ttl      max ttl, in days (default 1)";
+    echo "  -b path     path to momento etl binary (default linux-x64/MomentoEtl)";
+    echo "  <data_path> path to data directory (where redis/ is expected and stage1/ will be created)";
+    exit 1;
+}
+
+# Parse CLI args
+max_item_size=1
+max_ttl=1
+momento_etl_path="linux-x64/MomentoEtl"
+
+while getopts "hs:t:b:" o; do
+    case "$o" in
+        h)
+            usage_exit
+            ;;
+        s)
+            max_item_size=${OPTARG}
+            ;;
+        t)
+            max_ttl=${OPTARG}
+            ;;
+        b)
+            momento_etl_path=${OPTARG}
+            ;;
+        *)
+            usage_exit
+            ;;
+    esac
+done
+shift $(($OPTIND-1))
 
 # Assumes rdb files located at: $data_path/redis/*rdb
 # This directory structure is necessary for the docker container
 data_path=$1
 
-# Max item size in MiB
-max_item_size=$2
-
-# Max TTL in days
-max_ttl=$3
-
-# Path to MomentoEtl binary
-momento_etl_path=${4:-linux-x64/MomentoEtl}
-
+if [ -z "$data_path" ]; then
+  echo "Need to set data_path"
+  usage_exit
+fi
 
 # Assumes rdb files located at: $data_path/redis/*rdb
 # Writes rdb -> jsonl at $data_path/stage1
@@ -45,18 +75,14 @@ function file_exists_or_panic() {
     fi
 }
 
-function is_set_or_panic() {
-    if [ "$1" = "" ]
-    then
-        echo "Need to set config in file: $2 not set"
-        exit 1
-    fi
-}
-
 dir_exists_or_panic $data_path
 file_exists_or_panic $momento_etl_path
-is_set_or_panic "$max_item_size" "max_item_size"
-is_set_or_panic "$max_ttl" "max_ttl"
+
+echo "=== EXTRACT AND VALIDATE WITH THE FOLLOWING SETTINGS ==="
+echo "max_item_size = $max_item_size"
+echo "max_ttl = ${max_ttl}"
+echo "momento_etl_path = ${momento_etl_path}"
+echo "data_path = ${data_path}"
 
 stage1_path=$data_path/stage1
 stage2_path=$data_path/stage2
@@ -106,7 +132,7 @@ done
 
 # Having the data in one file makes looking at the validation results easier
 joined_file=$stage2_path/merged.jsonl
-rm $joined_file
+rm $joined_file 2> /dev/null
 
 echo ==== STAGE 2: JOIN JSONL
 
