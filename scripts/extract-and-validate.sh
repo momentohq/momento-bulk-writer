@@ -13,6 +13,7 @@ function usage_exit() {
 max_item_size=1
 max_ttl=1
 momento_etl_path="bin/MomentoEtl"
+rdb_cli_path="third-party/redis-rdb-cli/bin/rct"
 
 while getopts "hs:t:" o; do
     case "$o" in
@@ -40,6 +41,8 @@ if [ -z "$data_path" ]; then
   echo "Need to set data_path"
   usage_exit
 fi
+
+data_path=$(readlink -f $data_path)
 
 # Assumes rdb files located at: $data_path/redis/*rdb
 # Writes rdb -> jsonl at $data_path/stage1
@@ -73,6 +76,7 @@ function file_exists_or_panic() {
 
 dir_exists_or_panic $data_path
 file_exists_or_panic $momento_etl_path
+file_exists_or_panic $rdb_cli_path
 
 echo "=== EXTRACT AND VALIDATE WITH THE FOLLOWING SETTINGS ==="
 echo "max_item_size = $max_item_size"
@@ -100,28 +104,30 @@ rm -f $stage1_path/* $stage2_path/* $stage3_strict_path/* $stage3_lax_path/*
 redis_path=$data_path/redis
 dir_exists_or_panic $redis_path
 
-# Expand to absolute path
-mountpoint=$(readlink -f $data_path)
-
+echo
 echo ==== STAGE 1: RDB TO JSONL
+
+# Because the rct tool assumes it is run from the bin directory
+# we need to change to that directory before running it
+pushd "$(dirname $rdb_cli_path)" > /dev/null
+rdb_cli_filename="$(basename $rdb_cli_path)"
 
 for file in `ls $redis_path/*rdb`
 do
     rdb_filename="$(basename $file)"
     jsonl_filename="${rdb_filename%.*}.jsonl"
 
-    docker run \
-        -w /app/redis-cli/bin \
-        -v "$mountpoint:/data" \
-        --platform linux/amd64 \
-        redisrdbcli/redis-rdb-cli:latest \
-        rct -f jsonl -s /data/redis/$rdb_filename -o /data/stage1/$jsonl_filename
+    # Get the directory that the rdb file is in
+    # This is necessary because rdb-cli will create a file in the current directory
+    # and we want to put it in the stage1 directory
+    ./${rdb_cli_filename} -f jsonl -s $file -o $stage1_path/$jsonl_filename
     
     if [ $? -ne 0 ]; then
         echo "Error converting RDB to JSONL, bailing: $?"
         exit 1
     fi
 done
+popd > /dev/null
 
 ###############
 # STAGE 2: JOIN JSONL
@@ -131,6 +137,7 @@ done
 joined_file=$stage2_path/merged.jsonl
 rm $joined_file 2> /dev/null
 
+echo
 echo ==== STAGE 2: JOIN JSONL
 
 for file in `ls $stage1_path/*jsonl`
@@ -143,6 +150,8 @@ done
 ###############
 # STAGE 3: VALIDATE
 ###############
+echo
+echo ==== STAGE 3: VALIDATE
 
 # STRICT
 $momento_etl_path validate \
