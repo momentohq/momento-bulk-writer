@@ -2,10 +2,11 @@
 #set -x
 
 function usage_exit() {
-    echo "Usage: $0 [-s size] [-t ttl] <data_path>";
-    echo "  -s size     max item size, in MiB (default 1)";
-    echo "  -t ttl      max ttl, in days (default 1)";
-    echo "  <data_path> path to data directory (where redis/ is expected and stage1/ will be created)";
+    echo "Usage: $0 [-s size] [-t ttl] <data_path> <output-path>";
+    echo "  -s size       max item size, in MiB (default 1)";
+    echo "  -t ttl        max ttl, in days (default 1)";
+    echo "  <data_path>   path to directory with jsonl files to validate";
+    echo "  <output-path> path to a directory where the output will be written";
     exit 1;
 }
 
@@ -13,7 +14,6 @@ function usage_exit() {
 max_item_size=1
 max_ttl=1
 momento_etl_path="bin/MomentoEtl"
-rdb_cli_path="third-party/redis-rdb-cli/bin/rct"
 
 while getopts "hs:t:" o; do
     case "$o" in
@@ -36,17 +36,18 @@ shift $(($OPTIND-1))
 # Assumes rdb files located at: $data_path/redis/*rdb
 # This directory structure is necessary for the docker container
 data_path=$1
+output_path=$2
 
 if [ -z "$data_path" ]; then
   echo "Need to set data_path"
   usage_exit
 fi
 
-data_path=$(readlink -f $data_path)
+if [ -z "$output_path" ]; then
+  echo "Need to set output_path"
+  usage_exit
+fi
 
-# Assumes rdb files located at: $data_path/redis/*rdb
-# Writes rdb -> jsonl at $data_path/stage1
-# - Joins to single jsonl file in $data_path/stage2
 # - Validates with strict and lax settings to
 #   - $data_path/stage3_strict and $data_path/stage3_lax respectively
 
@@ -75,62 +76,29 @@ function file_exists_or_panic() {
 }
 
 dir_exists_or_panic $data_path
+dir_exists_or_panic $output_path
 file_exists_or_panic $momento_etl_path
-file_exists_or_panic $rdb_cli_path
 
-echo "=== EXTRACT AND VALIDATE WITH THE FOLLOWING SETTINGS ==="
+echo "=== VALIDATE WITH THE FOLLOWING SETTINGS ==="
 echo "max_item_size = $max_item_size"
 echo "max_ttl = ${max_ttl}"
 echo "momento_etl_path = ${momento_etl_path}"
 echo "data_path = ${data_path}"
+echo "output_path = ${output_path}"
 
-stage1_path=$data_path/stage1
-stage2_path=$data_path/stage2
-stage3_strict_path=$data_path/stage3-strict
-stage3_lax_path=$data_path/stage3-lax
+stage2_path=$output_path/stage2
+stage3_strict_path=$output_path/stage3-strict
+stage3_lax_path=$output_path/stage3-lax
 
-create_path_or_panic $stage1_path
 create_path_or_panic $stage2_path
 create_path_or_panic $stage3_strict_path
 create_path_or_panic $stage3_lax_path
 
 # Flush any data from previous runs
-rm -f $stage1_path/* $stage2_path/* $stage3_strict_path/* $stage3_lax_path/*
+rm -f $stage2_path/* $stage3_strict_path/* $stage3_lax_path/*
 
 ###############
-# STAGE 1: RDB -> JSONL
-###############
-
-redis_path=$data_path/redis
-dir_exists_or_panic $redis_path
-
-echo
-echo ==== STAGE 1: RDB TO JSONL
-
-# Because the rct tool assumes it is run from the bin directory
-# we need to change to that directory before running it
-pushd "$(dirname $rdb_cli_path)" > /dev/null
-rdb_cli_filename="$(basename $rdb_cli_path)"
-
-for file in `ls $redis_path/*rdb`
-do
-    rdb_filename="$(basename $file)"
-    jsonl_filename="${rdb_filename%.*}.jsonl"
-
-    # Get the directory that the rdb file is in
-    # This is necessary because rdb-cli will create a file in the current directory
-    # and we want to put it in the stage1 directory
-    ./${rdb_cli_filename} -f jsonl -s $file -o $stage1_path/$jsonl_filename
-    
-    if [ $? -ne 0 ]; then
-        echo "Error converting RDB to JSONL, bailing: $?"
-        exit 1
-    fi
-done
-popd > /dev/null
-
-###############
-# STAGE 2: JOIN JSONL
+# STAGE 2: AGGREGATE JSONL
 ###############
 
 # Having the data in one file makes looking at the validation results easier
@@ -138,9 +106,10 @@ joined_file=$stage2_path/merged.jsonl
 rm $joined_file 2> /dev/null
 
 echo
-echo ==== STAGE 2: JOIN JSONL
+echo ==== STAGE 2: AGGREGATE JSONL
+echo "Aggregating jsonl files from $data_path into $joined_file"
 
-for file in `ls $stage1_path/*jsonl`
+for file in `ls $data_path/*jsonl`
 do
     cat $file >> $joined_file
     # Ensure newline between files
@@ -180,4 +149,4 @@ then
     exit 1
 fi
 
-echo Finished extract and validate. Inspect the validated data at $stage3_lax_path and $stage3_strict_path
+echo Finished transform and validate. Inspect the validated data at $stage3_lax_path and $stage3_strict_path
