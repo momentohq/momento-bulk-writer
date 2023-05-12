@@ -5,13 +5,13 @@
 #set -x
 
 function usage_exit() {
-    echo "Usage: $0 -a token -c cache [-t ttl] [-n N] [-l path] [-r] data_path"
+    echo "Usage: $0 -a token -c cache [-t ttl] [-n N] [-r] [-l path] data_path"
     echo "  -a token    Momento auth token"
     echo "  -c cache    Momento cache name"
     echo "  -t ttl      default ttl for Momento cache, in days (defaults 1)"
     echo "  -n N        number of concurrent requests to make to Momento (defaults to 4)"
-    echo "  -l path     path to write the log to (defaults to ./load.log)"
     echo "  -r          reset expired item ttl to default (defaults to false)"
+    echo "  -l path     path to write the log to (defaults to ./load.log)"
     echo "  <data_path> path to data file to load"
     exit 1
 }
@@ -39,11 +39,11 @@ while getopts "ha:c:t:n:l:r" o; do
         n)
             num_concurrent_requests=${OPTARG}
             ;;
-        l)
-            log_path=${OPTARG}
-            ;;
         r)
             reset_expired_items=1
+            ;;
+        l)
+            log_path=${OPTARG}
             ;;
         *)
             usage_exit
@@ -93,13 +93,15 @@ else
     reset_expired_items=""
 fi
 
+echo
+
 $momento_etl_path load \
   -a $auth_token \
 	-c $cache_name \
 	--defaultTtl $default_ttl \
   -n $num_concurrent_requests \
   $reset_expired_items \
-	$data_path 2>&1 > $log_path
+	$data_path 2>&1 | tee $log_path
 
 if [ $? -ne 0 ]
 then
