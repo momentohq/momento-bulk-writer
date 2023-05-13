@@ -7,6 +7,28 @@ function usage_exit() {
     echo "  -t ttl        max ttl, in days (default 1)";
     echo "  <data_path>   path to directory with jsonl files to validate";
     echo "  <output-path> path to a directory where the output will be written";
+    echo
+    echo "Description: Validates jsonl files using the momento-etl tool.";
+    echo "  jsonl files are assumed to be located at: <data_path>/*jsonl";
+    echo "  The tool first aggregates the data to <output_path>/aggregate,";
+    echo "  then validates the data with strict and lax settings to";
+    echo "  <output_path>/validate-strict and <output_path>/validate-lax respectively.";
+    echo
+    echo "  Strict validation tells you if any data meets the following:";
+    echo "    - exceeds the max item size";
+    echo "    - has a ttl greater than the max ttl";
+    echo "    - is missing a ttl (as this is required for Momento)";
+    echo "    - is a type unsupported by Momento";
+    echo "  This is helpful to cast a wide net and find any data that is not";
+    echo "  supported by Momento or potentially problematic (eg why does that";
+    echo "  item have an expiry of 2 years?)";
+    echo
+    echo "  Lax (relaxed) validation tells you if any data meets the following:";
+    echo "    - exceeds the max item size";
+    echo "    - is a type unsupported by Momento";
+    echo "  This is helpful to see the data that is truly unsupported, as we can";
+    echo "  apply a default TTL to items without one, clip the TTL of items that";
+    echo "  exceed the max TTL, and optionally reset the TTL of already expired items.";
     exit 1;
 }
 
@@ -76,7 +98,7 @@ function file_exists_or_panic() {
 }
 
 dir_exists_or_panic $data_path
-dir_exists_or_panic $output_path
+create_path_or_panic $output_path
 file_exists_or_panic $momento_etl_path
 
 echo "=== VALIDATE WITH THE FOLLOWING SETTINGS ==="
@@ -86,27 +108,27 @@ echo "momento_etl_path = ${momento_etl_path}"
 echo "data_path = ${data_path}"
 echo "output_path = ${output_path}"
 
-stage2_path=$output_path/stage2
-stage3_strict_path=$output_path/stage3-strict
-stage3_lax_path=$output_path/stage3-lax
+aggregate_path=$output_path/aggregate
+strict_path=$output_path/validate-strict
+lax_path=$output_path/validate-lax
 
-create_path_or_panic $stage2_path
-create_path_or_panic $stage3_strict_path
-create_path_or_panic $stage3_lax_path
+create_path_or_panic $aggregate_path
+create_path_or_panic $strict_path
+create_path_or_panic $lax_path
 
 # Flush any data from previous runs
-rm -f $stage2_path/* $stage3_strict_path/* $stage3_lax_path/*
+rm -f $aggregate_path/* $strict_path/* $lax_path/* 2> /dev/null
 
 ###############
-# STAGE 2: AGGREGATE JSONL
+# AGGREGATE JSONL
 ###############
 
 # Having the data in one file makes looking at the validation results easier
-joined_file=$stage2_path/merged.jsonl
+joined_file=$aggregate_path/merged.jsonl
 rm $joined_file 2> /dev/null
 
 echo
-echo ==== STAGE 2: AGGREGATE JSONL
+echo ==== AGGREGATE JSONL
 echo "Aggregating jsonl files from $data_path into $joined_file"
 
 for file in `ls $data_path/*jsonl`
@@ -117,10 +139,10 @@ do
 done
 
 ###############
-# STAGE 3: VALIDATE
+#  VALIDATE
 ###############
 echo
-echo ==== STAGE 3: VALIDATE
+echo ==== VALIDATE
 
 # STRICT
 $momento_etl_path validate \
@@ -128,8 +150,8 @@ $momento_etl_path validate \
     --maxTtl $max_ttl --filterLongTtl \
     --filterAlreadyExpired \
     --filterMissingTtl \
-    $joined_file $stage3_strict_path/valid.jsonl $stage3_strict_path/error \
-    2>&1 | tee $stage3_strict_path/log
+    $joined_file $strict_path/valid.jsonl $strict_path/error \
+    2>&1 | tee $strict_path/log
 
 if [ $? -ne 0 ]
 then
@@ -140,8 +162,8 @@ fi
 # LAX
 $momento_etl_path validate \
     --maxItemSize $max_item_size \
-    $joined_file $stage3_lax_path/valid.jsonl $stage3_lax_path/error \
-    2>&1 | tee $stage3_lax_path/log
+    $joined_file $lax_path/valid.jsonl $lax_path/error \
+    2>&1 | tee $lax_path/log
 
 if [ $? -ne 0 ]
 then
@@ -149,4 +171,4 @@ then
     exit 1
 fi
 
-echo Finished transform and validate. Inspect the validated data at $stage3_lax_path and $stage3_strict_path
+echo Finished transform and validate. Inspect the validated data at $lax_path and $strict_path

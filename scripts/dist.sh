@@ -11,7 +11,7 @@ for os_target in osx linux win; do
   cp -r src/Momento.Etl/Cli/bin/Release/net6.0/$runtime/publish/* dist/$output_dir/bin
   mkdir -p dist/$output_dir/third-party
   cp -r dist/redis-rdb-cli dist/$output_dir/third-party
-  cp scripts/{extract-rdb,validate,load}.sh dist/$output_dir
+  cp scripts/{extract-rdb,extract-rdb-and-validate,validate,load}.sh dist/$output_dir
 
   if [ "$os_target" = "win" ]; then
     sed -i "" "s/bin\/MomentoEtl/bin\/MomentoEtl.exe/g" dist/$output_dir/*.sh
