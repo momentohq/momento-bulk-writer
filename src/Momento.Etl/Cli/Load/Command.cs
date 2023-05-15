@@ -166,10 +166,12 @@ public class Command : IDisposable
         else if (deleteResponse is CacheDeleteResponse.Error error)
         {
             logger.LogError($"error_deleting: {error.Message}; {line}");
+            return;
         }
         else
         {
             logger.LogError($"unknown_response: {line}");
+            return;
         }
 
         var concatenateResponse = await client.ListConcatenateFrontAsync(cacheName, item.Key, item.Value, null, new CollectionTtl(ttl, true));

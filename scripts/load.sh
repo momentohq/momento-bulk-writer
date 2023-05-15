@@ -13,6 +13,13 @@ function usage_exit() {
     echo "  -r          reset expired item ttl to default (defaults to false)"
     echo "  -l path     path to write the log to (defaults to ./load.log)"
     echo "  <data_path> path to data file to load"
+    echo
+    echo "Description: Loads a single data file into Momento."
+    echo "  Data file is assumed to be jsonl file located at: <data_path>."
+    echo "  The data will be stored in the cache named <cache> using the auth token <token>."
+    echo "  Data lacking an expiry will be given a default expiry of <ttl> days."
+    echo "  For data with an expiry, TTL is calculated from the timestamp in the data file relative to now."
+    echo "  Data already expired will be discarded, unless -r is specified."
     exit 1
 }
 
