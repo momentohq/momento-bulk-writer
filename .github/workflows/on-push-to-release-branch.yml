@@ -1,0 +1,75 @@
+name: On push to release
+
+on:
+  push:
+    branches: [release]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semrel.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Preview new version number
+        id: semrel-preview
+        uses: go-semantic-release/action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          allow-initial-development-versions: true
+          force-bump-patch-version: true
+          dry: true
+          # For whatever reason, this silly tool won't let you do releases from branches
+          #  other than the default branch unless you pass this flag, which doesn't seem
+          #  to actually have anything to do with CI:
+          # https://github.com/go-semantic-release/semantic-release/blob/master/cmd/semantic-release/main.go#L173-L194
+          # https://github.com/go-semantic-release/condition-github/blob/4c8af3fc516151423fff2f77eb08bf7082570676/pkg/condition/github.go#L42-L44
+          custom-arguments: "--no-ci"
+
+      - name: Match major version
+        id: major-version-bump-match
+        run: |
+          if [[ "${{ steps.semrel-preview.outputs.version }}" =~ ^[1-9][0-9]*.0.0$ ]]
+          then
+            echo "matched=true" >> $GITHUB_OUTPUT
+          else
+            echo "matched=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Detected major version bump
+        if: ${{ steps.major-version-bump-match.outputs.matched == 'true' }}
+        run: echo "Detected major version bump!!!! New major version v${{ steps.semrel-preview.outputs.version }}"
+
+      - uses: trstringer/manual-approval@v1
+        if: ${{ steps.major-version-bump-match.outputs.matched == 'true' }}
+        with:
+          secret: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+          approvers: momentohq/engineering
+          minimum-approvals: 1
+          issue-title: ":rotating_light: Major version release: v${{ steps.semrel-preview.outputs.version }} :rotating_light:"
+          issue-body: ":rotating_light: A workflow triggered the release of major version v${{ steps.semrel-preview.outputs.version }} :rotating_light:\n\nBecause this may be followed by an :zap: irrevocable :zap: public release, confirm the team intended this. If there is any shred of doubt, deny the release and revisit later.\n\nPlease approve or deny the release of the new major version."
+          exclude-workflow-initiator-as-approver: false
+          additional-approved-words: ":shipit"
+          additional-denied-words: ""
+
+      - name: Set release
+        id: semrel
+        uses: go-semantic-release/action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          allow-initial-development-versions: true
+          force-bump-patch-version: true
+          dry: true
+          # For whatever reason, this silly tool won't let you do releases from branches
+          #  other than the default branch unless you pass this flag, which doesn't seem
+          #  to actually have anything to do with CI:
+          # https://github.com/go-semantic-release/semantic-release/blob/master/cmd/semantic-release/main.go#L173-L194
+          # https://github.com/go-semantic-release/condition-github/blob/4c8af3fc516151423fff2f77eb08bf7082570676/pkg/condition/github.go#L42-L44
+          custom-arguments: "--no-ci"
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stub publish to repo
+        run: echo "Publishing v${{ needs.release.outputs.version }} to package repository"
