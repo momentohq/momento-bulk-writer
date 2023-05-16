@@ -6,7 +6,7 @@ tar xzvf dist/redis-rdb-cli-release.tar.tgz -C dist
 
 for os_target in osx linux win; do
   runtime="${os_target}-x64"
-  output_dir=momento-etl-$runtime
+  output_dir=momento-bulk-writer-$runtime
   mkdir -p dist/$output_dir/bin
   cp -r src/Momento.Etl/Cli/bin/Release/net6.0/$runtime/publish/* dist/$output_dir/bin
   mkdir -p dist/$output_dir/third-party
