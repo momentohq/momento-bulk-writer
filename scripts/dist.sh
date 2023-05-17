@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-mkdir dist 2> /dev/null
+mkdir -p dist
 
 wget -O dist/redis-rdb-cli-release.tar.tgz https://github.com/leonchen83/redis-rdb-cli/releases/download/v0.9.3/redis-rdb-cli-release.tar.gz
 tar xzvf dist/redis-rdb-cli-release.tar.tgz -C dist
@@ -16,7 +16,11 @@ for os_target in osx linux win; do
   cp scripts/{extract-rdb,extract-rdb-and-validate,validate,load}.sh dist/$output_dir
 
   if [ "$os_target" = "win" ]; then
-    sed -i "" "s/bin\/MomentoEtl/bin\/MomentoEtl.exe/g" dist/$output_dir/*.sh
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i "" "s/bin\/MomentoEtl/bin\/MomentoEtl.exe/g" dist/$output_dir/*.sh
+    else
+      sed -i "s/bin\/MomentoEtl/bin\/MomentoEtl.exe/g" dist/$output_dir/*.sh
+    fi
   fi
 
   cd dist && tar czvf $output_dir.tgz $output_dir && cd ..
