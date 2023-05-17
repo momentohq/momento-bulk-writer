@@ -21,7 +21,7 @@ For running on Windows, you will either need to install bash, or run the linux v
 
 ## Installation
 
-1. Download the latest release from the [releases page]()
+1. Download the latest release from the [releases page](https://github.com/momentohq/momento-bulk-writer/releases/)
 2. Choose between linux, osx, and windows runtimes
 3. Untar and decompress the release to a directory of your choice
 
