@@ -44,12 +44,13 @@ jobs:
         if: ${{ steps.major-version-bump-match.outputs.matched == 'true' }}
         with:
           secret: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
-          approvers: momentohq/engineering
+          # TODO: replace with public team
+          approvers: malandis,cprice,eaddingtonwhite
           minimum-approvals: 1
           issue-title: ":rotating_light: Major version release: v${{ steps.semrel-preview.outputs.version }} :rotating_light:"
           issue-body: ":rotating_light: A workflow triggered the release of major version v${{ steps.semrel-preview.outputs.version }} :rotating_light:\n\nBecause this may be followed by an :zap: irrevocable :zap: public release, confirm the team intended this. If there is any shred of doubt, deny the release and revisit later.\n\nPlease approve or deny the release of the new major version."
           exclude-workflow-initiator-as-approver: false
-          additional-approved-words: ":shipit"
+          additional-approved-words: ":shipit:"
           additional-denied-words: ""
 
       - name: Set release
