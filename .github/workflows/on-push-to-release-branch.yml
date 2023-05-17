@@ -60,7 +60,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           allow-initial-development-versions: true
           force-bump-patch-version: true
-          dry: true
+          dry: false
           # For whatever reason, this silly tool won't let you do releases from branches
           #  other than the default branch unless you pass this flag, which doesn't seem
           #  to actually have anything to do with CI:
@@ -72,5 +72,34 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - name: Stub publish to repo
-        run: echo "Publishing v${{ needs.release.outputs.version }} to package repository"
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "6.0.x"
+
+      - name: Build release artifacts
+        run: make dist
+
+      - name: Upload release artifacts to release page
+        run: |
+          pip install git-archive-all
+          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          VERSION=${{ needs.release.outputs.version }}
+
+          for runtime in "linux-x64" "osx-x64" "win-x64"
+          do
+            cp ./dist/momento-bulk-writer-$runtime.tgz ./dist/momento-bulk-writer-$runtime-$VERSION.tgz
+            ARCHIVE_FILE=./dist/momento-bulk-writer-$runtime-$VERSION.tgz
+            echo "ARCHIVE_FILE="$ARCHIVE_FILE >> $GITHUB_ENV
+            git-archive-all $ARCHIVE_FILE
+            SHA=$(openssl sha256 < ${ARCHIVE_FILE} | sed 's/.* //')
+            echo "SHA="$SHA >> $GITHUB_ENV
+            echo "sha is: ${SHA}"
+            LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
+            RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
+            GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
+            echo $GH_ASSET
+            curl --data-binary @$ARCHIVE_FILE -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_ASSET
+          done
