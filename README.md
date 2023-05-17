@@ -1,4 +1,4 @@
-# momento-bulk-writer
+# momento-bulk-writer overview
 
 This project contains a set of tools to bulk load data into Momento. It is intended to be used by Momento users who wish to bulk load from an existing data source to Momento.
 
@@ -6,6 +6,10 @@ Included in the project are tools to extract, validate, and load data into Momen
 Currently we have implemented a Redis to Momento pipeline, but the tools are designed to be extensible to other data sources. Popular data sources include Redis, Memcached, csv, json, parquet, and others.
 
 If there is a data source you would like to see supported, please open an issue or submit a pull request.
+
+# Architecture
+
+![architecture](./docs/momento-bulk-writer-architecture.png)
 
 # Setup
 
