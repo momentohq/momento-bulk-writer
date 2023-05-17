@@ -1,140 +1,156 @@
-# rdb-to-momento
+# momento-bulk-writer overview
 
-ETL for users with a Redis database in hand
+This project contains a set of tools to bulk load data into Momento. It is intended to be used by Momento users who wish to bulk load from an existing data source to Momento.
 
-# Project Structure
+Included in the project are tools to extract, validate, and load data into Momento. The tools are designed to be run in a pipeline, but can also be run individually.
+Currently we have implemented a Redis to Momento pipeline, but the tools are designed to be extensible to other data sources. Popular data sources include Redis, Memcached, csv, json, parquet, and others.
+
+If there is a data source you would like to see supported, please open an issue or submit a pull request.
+
+# Architecture
+
+![architecture](./docs/momento-bulk-writer-architecture.png)
+
+# Setup
+
+## Prerequisites
+
+For reading a Redis database, you will need Java 8 or higher.
+
+For running on Windows, you will either need to install bash, or run the linux version in the Windows Subsystem for Linux (WSL).
+
+## Installation
+
+1. Download the latest release from the [releases page]()
+2. Choose between linux, osx, and windows runtimes
+3. Untar and decompress the release to a directory of your choice
+
+Example for linux:
+
+```bash
+$ wget https://github.com/momentohq/momento-bulk-writer/releases/download/${version}/momento-bulk-writer-linux-x86.tgz
+$ tar xzvf momento-bulk-writer-linux-x86.tgz
+$ cd ./momento-bulk-writer-linux-x86
+$ ./extract-rdb.sh -h
+$ ./validate.sh -h
+$ ./load.sh -h
+```
+
+# Usage
+
+We demonstrate the usage of the tools with a Redis to Momento pipeline. The pipeline consists of three steps:
+
+1. Extract a Redis database to JSON lines
+2. Validate the JSON lines
+3. Load the JSON lines into Momento
+
+## RDB files
+
+First we need to obtain an RDB file(s). There are two ways to do this:
+
+1. Create [a backup in Elasticache](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-manual.html), or
+2. Run [`BGSAVE`](https://redis.io/commands/bgsave/) on an existing Redis instance.
+
+## Extract a Redis database to JSON lines and validate
+
+### Run the tools
+
+Let us assume we have a directory of rdb files located in `./redis` and we wish to write the output to the current directory `.`. We can do this with the `extract-rdb-and-validate.sh` script:
+
+```bash
+$ ./extract-rdb-and-validate.sh -s 1 -t 1 ./redis .
+```
+
+This will extract the rdb files in `./redis` to JSON lines and write the output to the current directory. The `-s` and `-t` flags are optional and set the max size in MiB and max TTL in days of items in the cache. If an item is larger than the max size or has a TTL longer than the max TTL, it will be flagged by the tools. The default values are 1 MiB and 1 day respectively.
+
+Contact Momento on [Discord](https://discord.com/invite/3HkAKjUZGq) or e-mail us at [support@momentohq.com](mailto:support@momentohq.com) if you need to increase these values.
+
+### Inspect the output
+
+Your current directory should now contain the following:
 
 ```
 .
-├── data ............................ sample data
-│   └── redis ....................... path to write redis snapshots
-├── scripts.......................... scripts run all or part of the pipeline
-├── src .............................
-│   └── Momento.Etl .................
-│       ├── RedisLoadGenerator ...... redis load gen to create rdb files
-│       ├── RedisReload ............. redis reload data with default ttl
-|       ├── Model ................... redis data model basd on redis-rdb-cli jsonl
-|       ├── Validation .............. momento-redis data validation
-|       └── Cli ..................... cli to run validator, loader, and verifier
-├── RdbToMomento.sln ................ repo solution file
-├── LICENSE ......................... apache 2.0 license
-├── Makefile ........................ makefile to build, clean, publish, and dist
-└── README.md ....................... hey that's me
-
+├── redis ...................... input data directory
+| ├── snapshot1.rdb............. redis snapshot part 1
+| └── snapshot2.rdb............. redis snapshot part 2
+|
+├── extract .................... rdb->jsonl output directory
+| ├── snapshot1.jsonl........... redis snapshot part 1, jsonl
+| └── snapshot2.jsonl........... redis snapshot part 2, jsonl
+|
+├── aggregate .................. jsonl aggregate output directory
+| └── merged.jsonl.............. redis snapshot part 1 + part 2, jsonl
+|
+├── validate-strict ............ validation output directory, strict mode
+| ├── error..................... items that failed validation
+| ├── log....................... validation report
+| └── valid.jsonl............... items that passed validation
+|
+├── validate-lax ............... validation output directory, lax mode
+| ├── error..................... items that failed validation
+| ├── log....................... validation report
+| └── valid.jsonl............... items that passed validation
 ```
 
-# How to Build, Test, and Distribute
+The important new folders are `validate-strict` and `validate-lax`.
 
-- Run `make help` to see make options.
+`validate-strict` flags data for any mismatch between Redis and Momento, if the data:
 
-- Run `make build` to build.
+- exceeds the max item size, or
+- has a TTL greater than the max TTL, or
+- is missing a TTL (as this is required for Momento), or
+- is a type unsupported by Momento
 
-- Run `make test` to run unit tests.
+Eg you may wish to inspect data without TTL to understand what TTL to apply.
 
-- Run `make dist` to build standalone executables and package scripts.
-  - NB: this builds executables for linux, windows, and macos
+To contrast, `validate-lax` flags data for fewer of the criteria, ie if the data:
 
-# How to Run (harder - by hand)
+- exceeds the max item size, or
+- is a type unsupported by Momento
 
-## Obtain an RDB file (Redis database)
+This is helpful to catch only the data that is wholly unsupported. The other checks strict validation performs can be overcome, since we can apply a default TTL to items without one, clip the TTL of items that exceed the max TTL, and optionally reset the TTL of already expired items.
 
-1. Create a backup in Elasticache, or
-
-2. Run `BGSAVE` on an existing Redis instance, or
-
-3. Use the `RedisLoadGenerator` project to generate a Redis database. See the project README for details.
-
-## Extract RDB to JSONL
-
-Use the `redisrdbcli/redis-rdb-cli` docker image to convert the Redis database (as RDB) to JSON lines. See the script `scripts/rdb-to-jsonl.sh` for an example invocation. This script mounts a host directory in the docker container so the container may read the Redis database and write the JSON lines.
-
-The script assumes a directory structure where the rdb file and eventual output share a common ancestor, eg
+In the logs and in standard out you should see a report of the validation. The validation report will look something like this:
 
 ```
-├── data ............................ mount point on host
-|   ├── redis ....................... path to write redis snapshots
-|   |   └── snapshot.rdb............. redis snapshot
-|   └── stage1
-|       └── snapshot.jsonl .......... redis snapshot as json lines
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] ==== STATS ====
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] Total: 214922
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] OK: 214900
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] Error: 22
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] ----
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] already_expired: 15
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] no_ttl: 5
+02:47:16 info: Momento.Etl.Cli.Validate.Command[0] data_too_large: 2
 ```
 
-To generate `snapshot.jsonl` from `snapshot.rdb`, run the script with `rdb-to-json.sh ./data redis/snapshot.rdb stage1/snapshot.jsonl`
-
-## Validate the database
-
-i. The validate tool identifies potential incompatibilities with Momento. When running the first time, we should explore all potential incompatiblities. To do this, enable all the flags:
-
-`./MomentoEtl validate --maxTtl <MAX-TTL-IN-DAYS> --maxItemSize <MAX-SIZE-IN-MiB-OF-ITEM> --filterLongTtl --filterAlreadyExpired --filterMissingTtl <DATA-PATH> <VALID-PATH> <ERROR-PATH>`
-
-For example:
-
-`./MomentoEtl validate --maxTtl 1 --maxPayloadSize 1 --filterLongTtl --filterAlreadyExpired --filterMissingTtl snapshot.jsonl valid.jsonl error`
-
-Which reads from `snapshot.jsonl`, writes data that passes the filters to `valid.jsonl` and those that do not to `error`. `error` contains two columns separated by a tab. The first column contains an error message. This allows you to easily grep error types for analysis. Specifically an end user may wish to know which items have a longer TTL than allowed, which items are too big, and which data types are not supported.
-
-ii. After doing an initial analysis, run the tool with a relaxed set of filters. Because a TTL that is too long can be clipped, a missing one can have one applied, etc. we can still store these items. Because an item that is too large is not recoverable and neither is an unsupported data type, we still filter those:
-
-`./MomentoEtl validate --maxItemSize 1 snapshot.jsonl valid.jsonl error`
-
-## Load the data into Momento
-
-To store the data in Momento, run this command:
-
-`./MomentoEtl load -a <AUTH-TOKEN> -c <CACHE-NAME> --defaultTtl <DEFAULT-TTL> <DATA-PATH>`
-
-Asssuming we created a `valid.jsonl` file from step 3, we would run:
-
-`./MomentoEtl load -a <AUTH-TOKEN> -c <CACHE-NAME> --defaultTtl 1 valid.jsonl`
-
-Note:
-
-- We assume that the cache has already been created. We recommend this since, because loading the data all at once demands much rate and throughput, the cache limits ought to be adjusted beforehand. If we create the caache as part of the load command, then limits will be default and too low.
-
-- The service clips TTLs to be at most the cache-specific TTL.
-
-- By default we discard items that have already expired.
-  - There is an option to not do this; see the CLI for details. (Why would we want to override this? Suppose we are testing how long it takes to load a snapshot. As the snapshot ages, more and more items will expire. Eventually it becomes useless. Hence to test how long it takes to load a particular snapshot, we want to load expired items. This way at least we estimate the worst case.)
-
-## (optional) Verify the data in Momento matches what is on disk
-
-We can also verify that the data we used the load step matches what is in Momento. The `verify` subcommand reads a json lines data file from disk, queries Momento for each of the items, and verifies the data matches. This is a sanity check that _should_ succeed, modulo items that already expired. To run, use this command:
-
-`./MomentoEtl verify -a <AUTH-TOKEN> -c <CACHE-NAME> <DATA-PATH>`
-
-where `<DATA-PATH>` could be the same file loaded into Momento. To run on a random sample instead, run:
-
-`shuf -n N <DATA-PATH> > random_sample`
-
-to get a random sample of size N, then use this file as input to the verify subcommand.
-
-Problematic lines are logged with error level logging.
-
-# How to Run (easier - using scripts)
-
-We have authored scripts to automate the above steps. We assume they will run on AMI instances (Linux), hence they invoke the Linux build. Change this if you intend on running in a different environment.
-
-## Build a deployable package by running:
-
-`make dist`
-
-This produces `dist/momento-etl.tgz` with the scripts and binaries bundled together.
-
-## Extract and validate
-
-The script `extract-and-validate.sh` wraps the extract and validate steps above. We assume the same directory structure as above with a parent directory `data` and subdirectory `data/redis` that contains the rdb files. Example:
-
-`./extract-and-validate.sh path-to-data-dir 1 1`
-
-This extracts the RDB files at `path-to-data-dir/redis` and writes the output to `path-to-data-dir/stage1`. The last two arguments are the max item size and max TTL, respectively. These are used to filter the data. The script writes the output to `path-to-data-dir/stage3-lax/valid.jsonl` and `path-to-data-dir/stage3-lax/error`.
+This means that 214900 passed the validation and there were 22 errors. Of the 22 errors, 15 items already expired, 5 items had no TTL, and 2 items were too large for the max size of 1MiB. Open the error file to see the particular items that failed validation and why.
 
 ## Load
 
-Load the data into Momento. Use `load.sh` to do this. Example:
+Now we will load the data into Momento. We will use the `load` script. An example invocation is:
 
-`./load.sh path-to-validated-file auth-token cache-name 1`
+```
+$ ./load.sh -a $AUTH_TOKEN -c $CACHE -t 1 -n 10 ./validate-lax/valid.jsonl
+```
 
-where `path-to-validated-file` would be produced by `extract-and-validated.sh`, eg in `data/stage3-lax/valid`. This command loads the data into the cache `cache-name` using the auth token `auth-token`. The last argument is the default TTL to use for items that do not have a TTL. By default the script writes logs to `./logs/`, and defaults to a max of 10 concurrent requests.
+This will load the data in `./validate-lax/valid.jsonl` into the cache `$CACHE` with a default TTL of 1 day. The `-n` flag sets the number of concurrent requests to make to Momento.
+
+Note:
+
+- This will fail if the cache does not exist. We recommend creating the cache beforehand, since for a bulk load you will need to request a higher rate limit and throughput limit. See the [Momento docs](https://docs.momentohq.com) for more information.
+- The service clips TTLs to be at most the cache-specific TTL.
+- By default we discard items that have already expired. Run with `-r` to reset already expired items to the default TTL (Why would we want to override this? Suppose we are testing how long it takes to load a snapshot. As the snapshot ages, more and more items will expire. Eventually it becomes useless. Hence to test how long it takes to load a particular snapshot, we want to load expired items. This way we estimate the worst case.)
+- Because the `load` script does upserts, you can run it multiple times on the same cache. That way if the operations is interrupted, or you cancel it, you can safely run it again from the start. To accomodate this, any time we load a list item, we delete that key first. This is because we do not want to append to the list, but rather replace it.
+
+## (Optional) Verify the data in Momento matches what is on disk
+
+We can also verify that the data we used the load step matches what is in Momento. The `verify` subcommand reads a json lines data file from disk, queries Momento for each of the items, and verifies the data matches. This is a sanity check that _should_ succeed, less items that already expired. To run, use this command:
+
+`./bin/MomentoEtl verify -a $AUTH_TOKEN -c $CACHE -n 10 ./validate-lax/valid.jsonl`
+
+Problematic lines are logged with error level logging.
 
 # Run from an EC2 instance
 
-We tested using an m6a.2xlarge with 64GB disk space, using `scripts/ec2-user-data.sh` to bootstrap the instance. We then used `make dist` to build the tool, copy to the instance, and run on the data. We recommend splitting the input file into a maximum of 10 chunks.
+We tested using an m6a.2xlarge with 64GB disk space, using `scripts/ec2-user-data.sh` to bootstrap the instance. On this instance type we use 10 concurent requests.
