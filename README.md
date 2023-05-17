@@ -9,7 +9,7 @@ If there is a data source you would like to see supported, please open an issue 
 
 # Architecture
 
-![architecture](./docs/momento-bulk-writer-architecture.png)
+<img src="./docs/momento-bulk-writer-arch.png"  width="75%" height="75%">
 
 # Setup
 
