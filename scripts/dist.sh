@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+mkdir dist 2> /dev/null
+
 wget -O dist/redis-rdb-cli-release.tar.tgz https://github.com/leonchen83/redis-rdb-cli/releases/download/v0.9.3/redis-rdb-cli-release.tar.gz
 tar xzvf dist/redis-rdb-cli-release.tar.tgz -C dist
 
