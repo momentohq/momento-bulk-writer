@@ -87,11 +87,12 @@ jobs:
           pip install git-archive-all
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           VERSION=${{ needs.release.outputs.version }}
+          cd dist
 
           for runtime in "linux-x64" "osx-x64" "win-x64"
           do
-            cp ./dist/momento-bulk-writer-$runtime.tgz ./dist/momento-bulk-writer-$runtime-$VERSION.tgz
-            ARCHIVE_FILE=./dist/momento-bulk-writer-$runtime-$VERSION.tgz
+            cp momento-bulk-writer-$runtime.tgz momento-bulk-writer-$runtime-$VERSION.tgz
+            ARCHIVE_FILE=momento-bulk-writer-$runtime-$VERSION.tgz
             echo "ARCHIVE_FILE="$ARCHIVE_FILE >> $GITHUB_ENV
             git-archive-all $ARCHIVE_FILE
             SHA=$(openssl sha256 < ${ARCHIVE_FILE} | sed 's/.* //')
