@@ -57,7 +57,7 @@ Let us assume we have a directory of rdb files located in `./redis` and we wish 
 $ ./extract-rdb-and-validate.sh -s 1 -t 1 ./redis .
 ```
 
-This will extract the rdb files in `./redis` to JSON lines and write the output to the current directory. The `-s` and `-t` flags are optional and set the max size in MiB and max ttl in days of items in the cache. If an item is larger than the max size or has a ttl longer than the max ttl, it will be flagged by the tools. The default values are 1 MiB and 1 day respectively.
+This will extract the rdb files in `./redis` to JSON lines and write the output to the current directory. The `-s` and `-t` flags are optional and set the max size in MiB and max TTL in days of items in the cache. If an item is larger than the max size or has a TTL longer than the max TTL, it will be flagged by the tools. The default values are 1 MiB and 1 day respectively.
 
 Contact Momento on [Discord](https://discord.com/invite/3HkAKjUZGq) or e-mail us at [support@momentohq.com](mailto:support@momentohq.com) if you need to increase these values.
 
@@ -120,7 +120,7 @@ In the logs and in standard out you should see a report of the validation. The v
 02:47:16 info: Momento.Etl.Cli.Validate.Command[0] data_too_large: 2
 ```
 
-This means that 214900 passed the validation and there were 22 errors. Of the 22 errors, 15 items already expired, 5 items had no ttl, and 2 items were too large for the max size of 1MiB. Open the error file to see the particular items that failed validation and why.
+This means that 214900 passed the validation and there were 22 errors. Of the 22 errors, 15 items already expired, 5 items had no TTL, and 2 items were too large for the max size of 1MiB. Open the error file to see the particular items that failed validation and why.
 
 ## Load
 
@@ -149,4 +149,4 @@ Problematic lines are logged with error level logging.
 
 # Run from an EC2 instance
 
-We tested using an m6a.2xlarge with 64GB disk space, using `scripts/ec2-user-data.sh` to bootstrap the instance. We then used `make dist` to build the tool, copy to the instance, and run on the data. We recommend splitting the input file into a maximum of 10 chunks.
+We tested using an m6a.2xlarge with 64GB disk space, using `scripts/ec2-user-data.sh` to bootstrap the instance. On this instance type we use 10 concurent requests.
