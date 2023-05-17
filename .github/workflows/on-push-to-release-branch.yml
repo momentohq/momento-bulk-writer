@@ -60,7 +60,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           allow-initial-development-versions: true
           force-bump-patch-version: true
-          dry: false
+          #dry: true
           # For whatever reason, this silly tool won't let you do releases from branches
           #  other than the default branch unless you pass this flag, which doesn't seem
           #  to actually have anything to do with CI:
