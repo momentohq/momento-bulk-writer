@@ -6,7 +6,7 @@ namespace Momento.Etl.RedisLoadGenerator;
 public class Options
 {
     [Option("redisHost", Required = false, HelpText = "Redis host to connect to")]
-    public string RedisHost { get; set; } = "redis";
+    public string RedisHost { get; set; } = "localhost";
 
     [Option("redisPort", Required = false, HelpText = "Redis port to connect to")]
     public int RedisPort { get; set; } = 6379;

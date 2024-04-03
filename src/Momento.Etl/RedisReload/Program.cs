@@ -143,6 +143,14 @@ public class Program
         }
     }
 
+    private static async Task Load(RedisSortedSet item)
+    {
+        foreach (var kv in item.Value)
+        {
+            await client.SortedSetAddAsync(item.Key, kv.Key, kv.Value);
+        }
+    }
+
     private static async Task Load(RedisList item)
     {
         foreach (var value in item.Value)

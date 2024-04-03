@@ -2,9 +2,10 @@
 #set -x
 
 function usage_exit() {
-    echo "Usage: $0 <data_path> <output-path>";
+    echo "Usage: $0 <data_path> <output_path> <rdb_cli_path>";
     echo "  <data_path>   path to a directory with rdb files";
-    echo "  <output-path> path to a directory where the output will be written";
+    echo "  <output_path> path to a directory where the output will be written";
+    echo "  <rdb_cli_path> path to the `bin/rct` executable used to run the extraction";
     echo
     echo "Description: Extracts rdb files to jsonl files using the rct tool.";
     echo "  rdb files are assumed to be located at: <data_path>/*rdb";
@@ -17,6 +18,7 @@ rdb_cli_path="third-party/redis-rdb-cli/bin/rct"
 
 data_path=$1
 output_path=$2
+rdb_cli_path=$3
 
 if [ -z "$data_path" ]; then
   echo "Need to set data_path"
@@ -25,6 +27,11 @@ fi
 
 if [ -z "$output_path" ]; then
   echo "Need to set output_path"
+  usage_exit
+fi
+
+if [ -z "$rdb_cli_path" ]; then
+  echo "Need to set rdb_cli_path"
   usage_exit
 fi
 
@@ -62,6 +69,7 @@ file_exists_or_panic $rdb_cli_path
 echo "=== EXTRACT RDB WITH THE FOLLOWING SETTINGS ==="
 echo "data_path = ${data_path}"
 echo "output_path = ${output_path}"
+echo "rdb_cli_path = ${rdb_cli_path}"
 
 
 # Flush any data from previous runs

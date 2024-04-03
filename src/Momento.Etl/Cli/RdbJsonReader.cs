@@ -73,6 +73,9 @@ public static class RdbJsonReader
                 case "set":
                     item = JsonConvert.DeserializeObject<RedisSet>(json);
                     break;
+                case "sortedset":
+                    item = JsonConvert.DeserializeObject<RedisSortedSet>(json);
+                    break;
                 default:
                     return JsonParseResult.Error.DataTypeNotSupported;
             }
