@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,8 +17,8 @@ public record RedisSortedSet : RedisItem
 
     public override int ItemSizeInBytes()
     {
-        int baseSize = base.ItemSizeInBytes();
-        int valueSize = Value.Sum(pair => pair.Key.ItemSizeInBytes() + sizeof(double));
+        var baseSize = base.ItemSizeInBytes();
+        var valueSize = Value.Sum(pair => pair.Key.ItemSizeInBytes() + sizeof(double));
         return baseSize + valueSize;
     }
 
