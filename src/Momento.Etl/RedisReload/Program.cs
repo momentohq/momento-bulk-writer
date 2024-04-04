@@ -86,7 +86,6 @@ public class Program
         try
         {
             options.Validate();
-            // After validating CLI options...
             await InitializeConnectionPool(options.RedisHost, options.RedisPort);
         }
         catch (Exception e)
@@ -115,23 +114,24 @@ public class Program
 
         logger.LogInformation($"Loading from {options.RedisDumpJsonlPath} items");
 
-        using (var stream = File.OpenText(options.RedisDumpJsonlPath))
+        // Read all lines into memory
+        var lines = await File.ReadAllLinesAsync(options.RedisDumpJsonlPath);
+        logger.LogInformation($"Total lines to process: {lines.Length}");
+
+        int linesProcessed = 0;
+        foreach (var line in lines)
         {
-            string? line;
-            int linesProcessed = 0;
-            while ((line = stream.ReadLine()) != null)
+            await ProcessLine(line);
+            linesProcessed++;
+            if (linesProcessed % 10_000 == 0)
             {
-                await ProcessLine(line);
-                linesProcessed++;
-                if (linesProcessed % 10_000 == 0)
-                {
-                    logger.LogInformation($"Processed {linesProcessed}");
-                }
+                logger.LogInformation($"Processed {linesProcessed}");
             }
         }
 
         logger.LogInformation("All done, Total elements: " + totalElements);
     }
+
 
     private static async Task ProcessLine(string line)
     {
