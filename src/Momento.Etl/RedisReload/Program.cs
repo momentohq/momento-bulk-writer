@@ -223,15 +223,15 @@ public class Program
         }
         Interlocked.Increment(ref totalElements);
 
-        // Logging remains unchanged
-        var logEntry = new
-        {
-            duration = durationMicroseconds,
-            itemType,
-            redisAPI
-        };
+        // // Logging remains unchanged
+        // var logEntry = new
+        // {
+        //     duration = durationMicroseconds,
+        //     itemType,
+        //     redisAPI
+        // };
 
-        logger.LogInformation(JsonSerializer.Serialize(logEntry));
+        // logger.LogInformation(JsonSerializer.Serialize(logEntry));
     }
 
 
