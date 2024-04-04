@@ -7,7 +7,8 @@ using Momento.Etl.Cli;
 using Momento.Etl.Model;
 using Momento.Etl.Utils;
 using StackExchange.Redis;
-
+using System.Diagnostics;
+using System.Text.Json;
 namespace Momento.Etl.RedisLoadGenerator;
 
 public class Program
@@ -15,11 +16,20 @@ public class Program
     private static ILogger logger;
     private static TimeSpan defaultTtl;
     private static IDatabase client = null!;
+    private static long zaddOperationsCounter = 0;
+    private static System.Timers.Timer throughputTimer;
 
     static Program()
     {
         var loggerFactory = LoggerUtils.CreateConsoleLoggerFactory();
         logger = loggerFactory.CreateLogger<Program>();
+
+
+        // Initialize and start the throughput timer
+        throughputTimer = new System.Timers.Timer(1000); // Log every 1000 milliseconds (1 second)
+        throughputTimer.Elapsed += LogThroughput;
+        throughputTimer.AutoReset = true;
+        throughputTimer.Enabled = true;
     }
 
     public static void DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errors)
@@ -147,7 +157,7 @@ public class Program
     {
         foreach (var kv in item.Value)
         {
-            await client.SortedSetAddAsync(item.Key, kv.Key, kv.Value);
+            await LogAndLoadAsync(() => client.SortedSetAddAsync(item.Key, kv.Key, kv.Value), "sortedset", "ZADD");
         }
     }
 
@@ -167,11 +177,48 @@ public class Program
         }
     }
 
+    private static async Task LogAndLoadAsync(Func<Task> loadOperation, string itemType, string redisAPI)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        await loadOperation();
+
+        stopwatch.Stop();
+        long durationMicroseconds = (stopwatch.ElapsedTicks * 1_000_000) / Stopwatch.Frequency;
+
+        // If this is a ZADD operation, increment the counter
+        if (redisAPI == "ZADD")
+        {
+            Interlocked.Increment(ref zaddOperationsCounter);
+        }
+
+        var logEntry = new
+        {
+            duration = durationMicroseconds,
+            itemType,
+            redisAPI
+        };
+
+        logger.LogInformation(JsonSerializer.Serialize(logEntry));
+    }
+
+
+    private static void LogThroughput(Object source, System.Timers.ElapsedEventArgs e)
+    {
+        // Capture the counter value and reset it atomically
+        long operationsThisSecond = Interlocked.Exchange(ref zaddOperationsCounter, 0);
+        
+        // Log the throughput
+        logger.LogInformation($"ZADD Throughput: {operationsThisSecond} operations per second");
+    }
+
+
+
 #pragma warning disable CS1998
     // disable warnings for no "await"
     private static async Task Load(object item)
     {
-        logger.LogError("unsupported_data_type");
+        logger.LogError("LoadError: unsupported_data_type");
     }
 #pragma warning restore CS1998
 
