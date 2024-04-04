@@ -17,6 +17,7 @@ public class Program
     private static TimeSpan defaultTtl;
     private static IDatabase client = null!;
     private static long zaddOperationsCounter = 0;
+    private static long totalElements = 0;
     private static System.Timers.Timer throughputTimer;
 
     static Program()
@@ -109,7 +110,7 @@ public class Program
             }
         }
 
-        logger.LogInformation("All done");
+        logger.LogInformation("All done, Total elements: " + totalElements);
     }
 
     private static async Task ProcessLine(string line)
@@ -191,6 +192,7 @@ public class Program
         {
             Interlocked.Increment(ref zaddOperationsCounter);
         }
+        Interlocked.Increment(ref totalElements);
 
         var logEntry = new
         {
