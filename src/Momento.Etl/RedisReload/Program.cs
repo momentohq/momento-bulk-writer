@@ -117,6 +117,7 @@ public class Program
 
     // Read all lines into memory and precompute JSON parsing
     var lines = await File.ReadAllLinesAsync(options.RedisDumpJsonlPath);
+    logger.LogInformation($"Read {lines.Length} lines from file");
     var parsedItems = new List<dynamic>();
     foreach (var line in lines)
     {
@@ -136,7 +137,7 @@ public class Program
             logger.LogError($"should not reach here: {line}");
         }
     }
-
+    logger.LogInformation($"Parsed {parsedItems.Count} items");
     // Now that we have all items parsed, proceed with loading them
     int itemsProcessed = 0;
     foreach (var item in parsedItems)
