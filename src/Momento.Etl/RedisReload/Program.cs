@@ -82,76 +82,52 @@ public class Program
     }
 
     public static async Task RunAsync(Options options)
+{
+    // Initial setup remains unchanged
+    try
     {
-        try
-        {
-            options.Validate();
-            await InitializeConnectionPool(options.RedisHost, options.RedisPort);
-        }
-        catch (Exception e)
-        {
-            logger.LogError($"Error validating CLI options: {e.Message}");
-            Environment.Exit(1);
-        }
-
-        logger.LogInformation($"Waiting {options.StartupDelay} seconds for Redis to load...");
-        await Task.Delay(options.StartupDelay * 1000);
-
-        logger.LogInformation($"Connecting to Redis at {options.RedisHost}:{options.RedisPort}");
-
-        try
-        {
-            client = await ConnectToRedis(options.RedisHost, options.RedisPort);
-        }
-        catch (RedisConnectionException e)
-        {
-            logger.LogError($"Could not connect to redis: {e.Message}");
-            Environment.Exit(1);
-        }
-
-        logger.LogInformation($"Using default TTL of {options.DefaultTtl}d");
-        defaultTtl = TimeSpan.FromDays(options.DefaultTtl);
-
-        logger.LogInformation($"Loading from {options.RedisDumpJsonlPath} items");
-
-        // Read all lines into memory
-        var lines = await File.ReadAllLinesAsync(options.RedisDumpJsonlPath);
-        logger.LogInformation($"Total lines to process: {lines.Length}");
-
-        int linesProcessed = 0;
-        foreach (var line in lines)
-        {
-            await ProcessLine(line);
-            linesProcessed++;
-            if (linesProcessed % 10_000 == 0)
-            {
-                logger.LogInformation($"Processed {linesProcessed}");
-            }
-        }
-
-        logger.LogInformation("All done, Total elements: " + totalElements);
+        options.Validate();
+        await InitializeConnectionPool(options.RedisHost, options.RedisPort);
+    }
+    catch (Exception e)
+    {
+        logger.LogError($"Error validating CLI options: {e.Message}");
+        Environment.Exit(1);
     }
 
+    logger.LogInformation($"Waiting {options.StartupDelay} seconds for Redis to load...");
+    await Task.Delay(options.StartupDelay * 1000);
 
-    private static async Task ProcessLine(string line)
+    logger.LogInformation($"Connecting to Redis at {options.RedisHost}:{options.RedisPort}");
+
+    try
     {
-        line = line.Trim();
-        if (line.Equals(""))
-        {
-            return;
-        }
+        client = await ConnectToRedis(options.RedisHost, options.RedisPort);
+    }
+    catch (RedisConnectionException e)
+    {
+        logger.LogError($"Could not connect to redis: {e.Message}");
+        Environment.Exit(1);
+    }
 
-        var result = RdbJsonReader.ParseJson(line);
-        if (result is JsonParseResult.OK ok)
+    logger.LogInformation($"Using default TTL of {options.DefaultTtl}d");
+    defaultTtl = TimeSpan.FromDays(options.DefaultTtl);
+
+    logger.LogInformation($"Loading from {options.RedisDumpJsonlPath} items");
+
+    // Read all lines into memory and precompute JSON parsing
+    var lines = await File.ReadAllLinesAsync(options.RedisDumpJsonlPath);
+    var parsedItems = new List<dynamic>();
+    foreach (var line in lines)
+    {
+        if (string.IsNullOrWhiteSpace(line)) continue;
+
+        var parseResult = RdbJsonReader.ParseJson(line);
+        if (parseResult is JsonParseResult.OK okResult)
         {
-            var item = ok.Item;
-            await Load(item as dynamic);
-            if (item.Expiry.HasValue)
-            {
-                await client.KeyExpireAsync(item.Key, defaultTtl);
-            }
+            parsedItems.Add(okResult.Item);
         }
-        else if (result is JsonParseResult.Error error)
+        else if (parseResult is JsonParseResult.Error error)
         {
             logger.LogError($"{error.Message}: {line}");
         }
@@ -160,6 +136,21 @@ public class Program
             logger.LogError($"should not reach here: {line}");
         }
     }
+
+    // Now that we have all items parsed, proceed with loading them
+    int itemsProcessed = 0;
+    foreach (var item in parsedItems)
+    {
+        await Load(item as dynamic); // Your Load method needs to handle dynamic objects appropriately
+        itemsProcessed++;
+        if (itemsProcessed % 10_000 == 0)
+        {
+            logger.LogInformation($"Processed {itemsProcessed}");
+        }
+    }
+
+    logger.LogInformation("All done, Total elements: " + totalElements);
+}
 
     private static async Task Load(RedisString item)
     {
