@@ -20,6 +20,24 @@ public class Program
     private static long totalElements = 0;
     private static System.Timers.Timer throughputTimer;
 
+    private static List<IDatabase> connectionPool = new List<IDatabase>();
+    private static int poolSize = 50; // Number of connections in the pool
+    private static int currentConnectionIndex = 0;
+
+    private static async Task InitializeConnectionPool(string host, int port)
+    {
+        for (int i = 0; i < poolSize; i++)
+        {
+            var redisOptions = new ConfigurationOptions()
+            {
+                EndPoints = { { host, port } },
+                // Consider specifying other options for optimal performance
+            };
+            var connection = await ConnectionMultiplexer.ConnectAsync(redisOptions);
+            connectionPool.Add(connection.GetDatabase());
+        }
+    }
+
     static Program()
     {
         var loggerFactory = LoggerUtils.CreateConsoleLoggerFactory();
@@ -68,6 +86,8 @@ public class Program
         try
         {
             options.Validate();
+            // After validating CLI options...
+            await InitializeConnectionPool(options.RedisHost, options.RedisPort);
         }
         catch (Exception e)
         {
@@ -154,11 +174,19 @@ public class Program
         }
     }
 
+    private static IDatabase GetNextConnection()
+{
+    var index = Interlocked.Increment(ref currentConnectionIndex) % poolSize;
+    return connectionPool[index];
+}
+
+    // Example modification for RedisSortedSet Load method
     private static async Task Load(RedisSortedSet item)
     {
         foreach (var kv in item.Value)
         {
-            await LogAndLoadAsync(() => client.SortedSetAddAsync(item.Key, kv.Key, kv.Value), "sortedset", "ZADD");
+            var client = GetNextConnection(); // Get the next connection from the pool
+            await LogAndLoadAsync(client, db => db.SortedSetAddAsync(item.Key, kv.Key, kv.Value), "sortedset", "ZADD");
         }
     }
 
@@ -178,22 +206,24 @@ public class Program
         }
     }
 
-    private static async Task LogAndLoadAsync(Func<Task> loadOperation, string itemType, string redisAPI)
+    private static async Task LogAndLoadAsync(IDatabase client, Func<IDatabase, Task> loadOperation, string itemType, string redisAPI)
     {
         var stopwatch = Stopwatch.StartNew();
 
-        await loadOperation();
+        // Execute the load operation on the passed-in client
+        await loadOperation(client);
 
         stopwatch.Stop();
         long durationMicroseconds = (stopwatch.ElapsedTicks * 1_000_000) / Stopwatch.Frequency;
 
-        // If this is a ZADD operation, increment the counter
+        // Increment counters as before
         if (redisAPI == "ZADD")
         {
             Interlocked.Increment(ref zaddOperationsCounter);
         }
         Interlocked.Increment(ref totalElements);
 
+        // Logging remains unchanged
         var logEntry = new
         {
             duration = durationMicroseconds,
@@ -210,8 +240,13 @@ public class Program
         // Capture the counter value and reset it atomically
         long operationsThisSecond = Interlocked.Exchange(ref zaddOperationsCounter, 0);
         
+        var logEntry = new {
+            operations = operationsThisSecond,
+            totalElements
+        };
+    
         // Log the throughput
-        logger.LogInformation($"ZADD Throughput: {operationsThisSecond} operations per second");
+        logger.LogInformation(JsonSerializer.Serialize(logEntry));
     }
 
 
