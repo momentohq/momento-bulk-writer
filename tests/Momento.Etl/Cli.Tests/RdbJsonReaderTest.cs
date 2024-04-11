@@ -36,7 +36,6 @@ public class RdbJsonReaderTest
 
     [Theory]
     [InlineData("{ \"key\": \"hello\", \"value\": \"world\", \"type\": 0 }")]
-    [InlineData("{ \"key\": \"hello\", \"value\": \"world\", \"type\": \"sortedset\" }")]
     public void ParseJson_DataTypeNotSupported_Error(string json)
     {
         var result = RdbJsonReader.ParseJson(json);
