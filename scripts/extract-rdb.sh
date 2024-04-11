@@ -42,11 +42,6 @@ if [ -z "$output_path" ]; then
   usage_exit
 fi
 
-if [ -z "$rdb_cli_path" ]; then
-  echo "Need to set rdb_cli_path"
-  usage_exit
-fi
-
 data_path=$(readlink -f $data_path)
 
 
