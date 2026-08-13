@@ -6,6 +6,11 @@ on:
 
 jobs:
   release:
+    permissions:
+      # An explicit block zeroes every unlisted scope, and this job also needs
+      # contents for checkout and for go-semantic-release to cut the tag/release.
+      contents: write
+      issues: write
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.semrel.outputs.version }}
@@ -43,7 +48,7 @@ jobs:
       - uses: trstringer/manual-approval@v1
         if: ${{ steps.major-version-bump-match.outputs.matched == 'true' }}
         with:
-          secret: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+          secret: ${{ secrets.GITHUB_TOKEN }}
           # TODO: replace with public team
           approvers: malandis,cprice404,eaddingtonwhite
           minimum-approvals: 1
@@ -69,6 +74,8 @@ jobs:
           custom-arguments: "--no-ci"
 
   publish:
+    permissions:
+      contents: write
     needs: release
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +91,7 @@ jobs:
 
       - name: Upload release artifacts to release page
         run: |
-          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          AUTH="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
           VERSION=${{ needs.release.outputs.version }}
           cd dist
 
