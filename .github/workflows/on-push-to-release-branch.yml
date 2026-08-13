@@ -7,6 +7,9 @@ on:
 jobs:
   release:
     permissions:
+      # An explicit block zeroes every unlisted scope, and this job also needs
+      # contents for checkout and for go-semantic-release to cut the tag/release.
+      contents: write
       issues: write
     runs-on: ubuntu-latest
     outputs:
